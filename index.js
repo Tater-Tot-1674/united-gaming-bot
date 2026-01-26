@@ -1,17 +1,34 @@
-const fs = require("fs");
-const path = require("path");
-const { Client, GatewayIntentBits, Collection } = require("discord.js");
 require("dotenv").config();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const fs = require("fs");
+const { Client, GatewayIntentBits, Collection } = require("discord.js");
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
 
 client.commands = new Collection();
-const commandFiles = fs.readdirSync("./commands").filter(f => f.endsWith(".js"));
 
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  client.commands.set(command.data.name, command);
+
+// ✅ LOAD COMMANDS FROM SUBFOLDERS
+const commandFolders = fs.readdirSync("./commands");
+
+for (const folder of commandFolders) {
+  const commandFiles = fs
+    .readdirSync(`./commands/${folder}`)
+    .filter(file => file.endsWith(".js"));
+
+  for (const file of commandFiles) {
+    const command = require(`./commands/${folder}/${file}`);
+    client.commands.set(command.data.name, command);
+  }
 }
+
+
+client.once("ready", () => {
+  console.log(`🤖 Bot online as ${client.user.tag}`);
+});
+
 
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
@@ -23,9 +40,14 @@ client.on("interactionCreate", async interaction => {
     await command.execute(interaction);
   } catch (error) {
     console.error(error);
-    await interaction.reply({ content: "Error running command.", ephemeral: true });
+    await interaction.reply({
+      content: "❌ Error running command.",
+      ephemeral: true
+    });
   }
 });
 
+
 client.login(process.env.TOKEN);
+
 

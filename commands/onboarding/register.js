@@ -5,23 +5,21 @@ const playerService = require('../../services/playerService');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('register')
-    .setDescription('Register as a new player'),
+    .setDescription('Register yourself as a new player')
+    .addStringOption(option =>
+      option.setName('username')
+        .setDescription('Your in-game username')
+        .setRequired(true)),
   async execute(interaction) {
-    const id = interaction.user.id;
-    const existing = playerService.getPlayer(id);
+    const username = interaction.options.getString('username');
 
+    const existing = playerService.getPlayer(interaction.user.id);
     if (existing) {
       return interaction.reply({ content: '❌ You are already registered!', ephemeral: true });
     }
 
-    playerService.addPlayer(id, {
-      username: interaction.user.username,
-      xp: 0,
-      rank: 'Rookie',
-    });
-
-    await interaction.reply({ content: `✅ Registered ${interaction.user.username}! Welcome to KartKings!`, ephemeral: true });
+    playerService.addPlayer({ id: interaction.user.id, username, xp: 0, wins: 0, losses: 0 });
+    await interaction.reply(`✅ Registered successfully as **${username}**!`);
   },
 };
-
 

@@ -1,23 +1,44 @@
-// commands/onboarding/verify.js
 const { SlashCommandBuilder } = require('discord.js');
+const { playerService } = require('../../services/playerService');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('verify')
-    .setDescription('Verify your account with KartKings site')
+    .setName('register')
+    .setDescription('Register as a new player in KartKings')
     .addStringOption(option =>
-      option.setName('code')
-        .setDescription('Verification code from the site')
-        .setRequired(true)),
+      option.setName('username')
+        .setDescription('Your in-game display name')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('team')
+        .setDescription('Choose your starting team')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Red', value: 'red' },
+          { name: 'Blue', value: 'blue' },
+          { name: 'Green', value: 'green' },
+          { name: 'Yellow', value: 'yellow' },
+          { name: 'Purple', value: 'purple' },
+          { name: 'Orange', value: 'orange' }
+        )
+    ),
   async execute(interaction) {
-    const code = interaction.options.getString('code');
+    const username = interaction.options.getString('username');
+    const team = interaction.options.getString('team');
 
-    // Placeholder logic: in future, match with site data
-    if (code === '1234') {
-      await interaction.reply({ content: '✅ Verification successful!', ephemeral: true });
-    } else {
-      await interaction.reply({ content: '❌ Invalid verification code.', ephemeral: true });
+    try {
+      const result = await playerService.registerPlayer(interaction.user.id, username, team);
+
+      if (result.success) {
+        await interaction.reply({ content: `🎉 Welcome **${username}**! You have joined the **${team}** team.`, ephemeral: true });
+      } else {
+        await interaction.reply({ content: `⚠️ ${result.message}`, ephemeral: true });
+      }
+    } catch (error) {
+      console.error('Error registering player:', error);
+      await interaction.reply({ content: '❌ Something went wrong during registration.', ephemeral: true });
     }
-  },
+  }
 };
 

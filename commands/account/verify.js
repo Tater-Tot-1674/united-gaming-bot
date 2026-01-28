@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { syncToSite } = require('../../utils/syncToSite');
+const { DATA_PATHS } = require('../../config/constants');
 
-const playersPath = path.join(__dirname, '../../data/players.json');
+const playersPath = path.join(__dirname, '../../', DATA_PATHS.PLAYERS);
 
 module.exports = {
   name: 'verify',
@@ -14,8 +15,10 @@ module.exports = {
     const players = JSON.parse(fs.readFileSync(playersPath));
     const player = players.find(p => p.id === userId);
 
-    if (!player) return interaction.reply({ content: 'You need to register first!', ephemeral: true });
-    if (player.verified) return interaction.reply({ content: 'You are already verified!', ephemeral: true });
+    if (!player)
+      return interaction.reply({ content: 'You need to register first!', ephemeral: true });
+    if (player.verified)
+      return interaction.reply({ content: 'You are already verified!', ephemeral: true });
 
     if (player.verificationCode === code) {
       player.verified = true;
@@ -27,3 +30,4 @@ module.exports = {
     }
   }
 };
+

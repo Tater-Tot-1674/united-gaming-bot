@@ -1,22 +1,29 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { playerService } = require('../../services/playerService');
+const fs = require('fs');
+const path = require('path');
+const { syncToSite } = require('../../utils/syncToSite');
+
+const playersPath = path.join(__dirname, '../../data/players.json');
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('verify')
-    .setDescription('Verify your linked KartKings account to access commands'),
+  name: 'verify',
+  description: 'Verify your account',
   async execute(interaction) {
-    try {
-      const player = await playerService.getPlayerByDiscord(interaction.user.id);
+    const userId = interaction.user.id;
+    const code = interaction.options.getString('code');
 
-      if (player) {
-        await interaction.reply({ content: `✅ Your account **${player.username}** is verified!`, ephemeral: true });
-      } else {
-        await interaction.reply({ content: '⚠️ You do not have a linked KartKings account. Use `/link` first.', ephemeral: true });
-      }
-    } catch (error) {
-      console.error('Error verifying player:', error);
-      await interaction.reply({ content: '❌ Something went wrong during verification.', ephemeral: true });
+    const players = JSON.parse(fs.readFileSync(playersPath));
+    const player = players.find(p => p.id === userId);
+
+    if (!player) return interaction.reply({ content: 'You need to register first!', ephemeral: true });
+    if (player.verified) return interaction.reply({ content: 'You are already verified!', ephemeral: true });
+
+    if (player.verificationCode === code) {
+      player.verified = true;
+      fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+      syncToSite('players.json'); // 🔥 live update
+      return interaction.reply({ content: 'Account verified successfully!', ephemeral: true });
+    } else {
+      return interaction.reply({ content: 'Invalid verification code.', ephemeral: true });
     }
   }
 };

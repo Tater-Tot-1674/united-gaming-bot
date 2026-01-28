@@ -1,3 +1,9 @@
+const DISCORD_TOKEN = process.env.DISCORDTOKEN;
+const GITHUB_TOKEN = process.env.GITHUBTOKEN;
+const WEBSITE_REPO = process.env.GITHUBREPO;
+const BOT_USER_ID = process.env.BOTUSERID;
+const RENDER_URL = process.env.RENDERSERVICEURL; // optional
+
 const fs = require('fs');
 const path = require('path');
 const { syncToSite } = require('../../utils/syncToSite');
@@ -17,5 +23,6 @@ module.exports = {
     return interaction.reply({ content: `Reminder: ${tournament.name} starts soon! ${mentions}`, ephemeral: false });
   }
 };
+
 
 

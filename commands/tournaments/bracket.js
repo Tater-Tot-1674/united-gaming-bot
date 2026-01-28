@@ -1,3 +1,9 @@
+const DISCORD_TOKEN = process.env.DISCORDTOKEN;
+const GITHUB_TOKEN = process.env.GITHUBTOKEN;
+const WEBSITE_REPO = process.env.GITHUBREPO;
+const BOT_USER_ID = process.env.BOTUSERID;
+const RENDER_URL = process.env.RENDERSERVICEURL; // optional
+
 const fs = require('fs');
 const path = require('path');
 const { generateBracket } = require('../../utils/bracketGen');
@@ -23,4 +29,5 @@ module.exports = {
     return interaction.reply({ content: `Bracket for ${tournament.name} generated!`, ephemeral: true });
   }
 };
+
 

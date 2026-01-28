@@ -1,24 +1,36 @@
-// commands/profiles/profile.js
 const { SlashCommandBuilder } = require('discord.js');
-const playerService = require('../../services/playerService');
+const { playerService } = require('../../services/playerService');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('profile')
-    .setDescription('View your profile or another player\'s')
+    .setDescription('View your profile or another player’s profile')
     .addUserOption(option =>
-      option.setName('user')
-        .setDescription('Player to view')
-        .setRequired(false)),
+      option.setName('player')
+        .setDescription('Mention a player to view their profile')
+        .setRequired(false)
+    ),
   async execute(interaction) {
-    const user = interaction.options.getUser('user') || interaction.user;
-    const player = playerService.getPlayer(user.id);
+    try {
+      const user = interaction.options.getUser('player') || interaction.user;
+      const player = await playerService.getPlayerByDiscord(user.id);
 
-    if (!player) return interaction.reply({ content: '❌ Player not found!', ephemeral: true });
+      if (!player) return interaction.reply({ content: '⚠️ Player not found.', ephemeral: true });
 
-    await interaction.reply({
-      content: `**${user.username}'s Profile**\nXP: ${player.xp}\nWins: ${player.wins}\nLosses: ${player.losses}`,
-    });
-  },
+      await interaction.reply({
+        content: `🎮 **${player.username}**'s Profile\n` +
+                 `Team: ${player.team || 'None'}\n` +
+                 `Wins: ${player.wins || 0}\n` +
+                 `Losses: ${player.losses || 0}\n` +
+                 `Rank: ${player.rank || 'Unranked'}\n` +
+                 `XP: ${player.xp || 0}`,
+        ephemeral: true
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      await interaction.reply({ content: '❌ Something went wrong while fetching the profile.', ephemeral: true });
+    }
+  }
 };
+
 

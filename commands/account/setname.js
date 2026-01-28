@@ -1,30 +1,30 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { playerService } = require('../../services/playerService');
+const fs = require('fs');
+const path = require('path');
+const { syncToSite } = require('../../utils/syncToSite');
+
+const playersPath = path.join(__dirname, '../../data/players.json');
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('setname')
-    .setDescription('Set or update your KartKings display name')
-    .addStringOption(option =>
-      option.setName('name')
-        .setDescription('Your new display name')
-        .setRequired(true)
-    ),
+  name: 'setname',
+  description: 'Set your in-game name',
   async execute(interaction) {
+    const userId = interaction.user.id;
     const newName = interaction.options.getString('name');
 
-    try {
-      const result = await playerService.updateName(interaction.user.id, newName);
+    const players = JSON.parse(fs.readFileSync(playersPath));
+    let player = players.find(p => p.id === userId);
 
-      if (result.success) {
-        await interaction.reply({ content: `✅ Your display name has been updated to **${newName}**!`, ephemeral: true });
-      } else {
-        await interaction.reply({ content: `⚠️ ${result.message}`, ephemeral: true });
-      }
-    } catch (error) {
-      console.error('Error updating display name:', error);
-      await interaction.reply({ content: '❌ Something went wrong while updating your name.', ephemeral: true });
+    if (!player) {
+      player = { id: userId, name: newName, verified: false };
+      players.push(player);
+    } else {
+      player.name = newName;
     }
+
+    fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+    syncToSite('players.json'); // 🔥 live update
+
+    return interaction.reply({ content: `Your in-game name is now ${newName}`, ephemeral: true });
   }
 };
 

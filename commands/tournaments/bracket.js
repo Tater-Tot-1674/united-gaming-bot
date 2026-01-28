@@ -1,27 +1,42 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { tournamentService } = require('../../services/tournamentService');
+const fs = require("fs");
+const path = require("path");
+const bracketGen = require("../../utils/bracketGen");
+
+const tournamentsPath = path.join(__dirname, "../../data/tournaments.json");
+const bracketPath = path.join(__dirname, "../../data/bracket.json");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('tournament-bracket')
-    .setDescription('View the bracket of a tournament')
-    .addStringOption(option =>
-      option.setName('tournament')
-        .setDescription('Tournament ID')
-        .setRequired(true)
-    ),
+  name: "bracket",
+  description: "Generate the tournament bracket",
+
   async execute(interaction) {
-    const tournamentId = interaction.options.getString('tournament');
+    let tournaments = JSON.parse(fs.readFileSync(tournamentsPath, "utf8"));
 
-    try {
-      const bracket = await tournamentService.getBracket(tournamentId);
-      if (!bracket) return interaction.reply({ content: '⚠️ Tournament not found or bracket not generated.', ephemeral: true });
+    const tournament = tournaments.find(t => t.active);
 
-      await interaction.reply({ content: `🏆 Bracket for tournament **${tournamentId}**:\n\`\`\`${JSON.stringify(bracket, null, 2)}\`\`\``, ephemeral: true });
-    } catch (error) {
-      console.error('Error fetching bracket:', error);
-      await interaction.reply({ content: '❌ Something went wrong while fetching the bracket.', ephemeral: true });
-    }
+    if (!tournament)
+      return interaction.reply({ content: "No active tournament found.", ephemeral: true });
+
+    if (tournament.players.length < 2)
+      return interaction.reply({ content: "Not enough players to start.", ephemeral: true });
+
+    // 🔒 Lock tournament
+    tournament.active = false;
+
+    const bracket = bracketGen(tournament.players);
+
+    fs.writeFileSync(bracketPath, JSON.stringify(bracket, null, 2));
+    fs.writeFileSync(tournamentsPath, JSON.stringify(tournaments, null, 2));
+
+    // 📋 Format round 1 matches
+    let msg = "🏆 **TOURNAMENT BRACKET GENERATED**\n\n**Round 1 Matchups:**\n";
+
+    bracket.rounds[0].forEach((match, i) => {
+      msg += `Match ${i + 1}: <@${match.p1}> vs <@${match.p2}>\n`;
+    });
+
+    interaction.reply(msg);
   }
 };
+
 

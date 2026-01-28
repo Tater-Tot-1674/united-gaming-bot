@@ -1,29 +1,20 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
+const { syncToSite } = require('../../utils/syncToSite');
 
-const bracketPath = path.join(__dirname, "../../data/bracket.json");
+const tournamentsPath = path.join(__dirname, '../../data/tournaments.json');
 
 module.exports = {
-  name: "remind",
-  description: "Remind players about their matches",
-
+  name: 'remind',
+  description: 'Remind participants of a tournament',
   async execute(interaction) {
-    const bracket = JSON.parse(fs.readFileSync(bracketPath, "utf8"));
+    const tournamentId = interaction.options.getString('tournament_id');
+    const tournaments = JSON.parse(fs.readFileSync(tournamentsPath));
+    const tournament = tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return interaction.reply({ content: 'Tournament not found', ephemeral: true });
 
-    if (!bracket.rounds.length)
-      return interaction.reply({ content: "No active bracket.", ephemeral: true });
-
-    const round = bracket.rounds[0];
-
-    let msg = "⏰ **Match Reminder!**\nPlayers, play your matches:\n\n";
-
-    round.forEach(match => {
-      if (!match.winner) {
-        msg += `🎮 <@${match.p1}> vs <@${match.p2}>\n`;
-      }
-    });
-
-    interaction.reply(msg);
+    const mentions = (tournament.participants || []).map(id => `<@${id}>`).join(' ');
+    return interaction.reply({ content: `Reminder: ${tournament.name} starts soon! ${mentions}`, ephemeral: false });
   }
 };
 

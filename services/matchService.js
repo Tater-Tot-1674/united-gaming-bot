@@ -1,49 +1,78 @@
-// services/matchService.js
 const fs = require('fs');
 const path = require('path');
-const playerService = require('./playerService');
+const { leaderboardCalc } = require('../utils/leaderboardCalc');
+const { rankSystem } = require('../utils/rankSystem');
+const { githubSync } = require('../utils/githubSync');
 
-const filePath = path.join(__dirname, '../data/matches.json');
+const playersPath = path.join(__dirname, '../data/players.json');
+const matchesPath = path.join(__dirname, '../data/matches.json');
 
-function loadMatches() {
-  if (!fs.existsSync(filePath)) return [];
-  const raw = fs.readFileSync(filePath);
-  return JSON.parse(raw);
+function load(file) {
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-function saveMatches(matches) {
-  fs.writeFileSync(filePath, JSON.stringify(matches, null, 2));
+function save(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-function addMatch(matchData) {
-  const matches = loadMatches();
-  matches.push(matchData);
-  saveMatches(matches);
+const XP_WIN = 25;
+const XP_LOSS = 10;
 
-  // Update player stats
-  const winner = playerService.getPlayer(matchData.winnerId);
-  const loser = playerService.getPlayer(matchData.loserId);
+exports.matchService = {
 
-  if (winner) {
-    playerService.updatePlayer(matchData.winnerId, {
-      wins: (winner.wins || 0) + 1,
-      xp: (winner.xp || 0) + 10,
+  async recordMatch(playerA, playerB, result) {
+    const players = load(playersPath);
+    const matches = load(matchesPath);
+
+    const p1 = players.find(p => p.id === playerA.id);
+    const p2 = players.find(p => p.id === playerB.id);
+
+    if (!p1 || !p2) throw new Error('Players missing');
+
+    const timestamp = new Date().toISOString();
+
+    // Determine winner/loser
+    let winner, loser;
+
+    if (result === 'win') {
+      winner = p1;
+      loser = p2;
+    } else {
+      winner = p2;
+      loser = p1;
+    }
+
+    // Update records
+    winner.wins = (winner.wins || 0) + 1;
+    loser.losses = (loser.losses || 0) + 1;
+
+    // XP gain
+    winner.xp = (winner.xp || 0) + XP_WIN;
+    loser.xp = (loser.xp || 0) + XP_LOSS;
+
+    // Rank recalculation
+    winner.rank = rankSystem.getRank(winner.xp);
+    loser.rank = rankSystem.getRank(loser.xp);
+
+    // Store match history
+    matches.push({
+      id: matches.length + 1,
+      p1: p1.username,
+      p2: p2.username,
+      winner: winner.username,
+      timestamp
     });
+
+    save(playersPath, players);
+    save(matchesPath, matches);
+
+    // Recalculate leaderboards
+    leaderboardCalc.update();
+
+    // Push data to website repo
+    await githubSync.sync();
+
+    return true;
   }
-
-  if (loser) {
-    playerService.updatePlayer(matchData.loserId, {
-      losses: (loser.losses || 0) + 1,
-      xp: (loser.xp || 0) + 2,
-    });
-  }
-
-  return matchData;
-}
-
-module.exports = {
-  loadMatches,
-  saveMatches,
-  addMatch,
 };
 

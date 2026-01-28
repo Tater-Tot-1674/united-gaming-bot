@@ -1,77 +1,42 @@
-const fs = require("fs");
-const path = require("path");
-const { addWin } = require("../../utils/leaderboardCalc");
+const fs = require('fs');
+const path = require('path');
+const { syncToSite } = require('../../utils/syncToSite');
+const { updateLeaderboard } = require('../../utils/leaderboardCalc');
+const { updateRank } = require('../../utils/rankSystem');
 
-const bracketPath = path.join(__dirname, "../../data/bracket.json");
+const dataPath = path.join(__dirname, '../../data/matches.json');
+const playersPath = path.join(__dirname, '../../data/players.json');
 
 module.exports = {
-  name: "report",
-  description: "Report a match result",
-
-  options: [
-    {
-      name: "winner",
-      type: 6, // USER
-      description: "Who won the match?",
-      required: true
-    }
-  ],
-
+  name: 'report',
+  description: 'Report a match result',
   async execute(interaction) {
-    const winnerId = interaction.options.getUser("winner").id;
+    const { winnerId, loserId } = interaction.options;
 
-    let bracket = JSON.parse(fs.readFileSync(bracketPath, "utf8"));
-    const roundIndex = bracket.currentRound;
-    const round = bracket.rounds[roundIndex];
+    // Load matches
+    const matches = JSON.parse(fs.readFileSync(dataPath));
+    matches.push({
+      winner: winnerId,
+      loser: loserId,
+      date: new Date().toISOString()
+    });
+    fs.writeFileSync(dataPath, JSON.stringify(matches, null, 2));
+    syncToSite('matches.json'); // 🔥 live update
 
-    let matchFound = false;
+    // Update leaderboard
+    const players = JSON.parse(fs.readFileSync(playersPath));
+    updateLeaderboard(players, winnerId, loserId);
+    fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+    syncToSite('players.json'); // 🔥 live update
 
-    for (let i = 0; i < round.length; i++) {
-      const match = round[i];
+    // Update ranks
+    updateRank(players, winnerId);
+    updateRank(players, loserId);
+    fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+    syncToSite('players.json'); // 🔥 live update
 
-      if (match.winner) continue;
-
-      if (match.p1 === winnerId || match.p2 === winnerId) {
-        match.winner = winnerId;
-        matchFound = true;
-
-        // 📊 leaderboard update
-        addWin(winnerId);
-
-        // ➡️ Advance to next round
-        const nextRound = bracket.rounds[roundIndex + 1];
-
-        if (nextRound) {
-          const slot = Math.floor(i / 2);
-          if (i % 2 === 0) nextRound[slot].p1 = winnerId;
-          else nextRound[slot].p2 = winnerId;
-        }
-
-        break;
-      }
-    }
-
-    if (!matchFound)
-      return interaction.reply({ content: "Match not found.", ephemeral: true });
-
-    // ✅ Check if round finished
-    const roundDone = round.every(m => m.winner);
-
-    if (roundDone) {
-      bracket.currentRound++;
-
-      // 🏆 Tournament winner?
-      if (bracket.currentRound >= bracket.rounds.length) {
-        fs.writeFileSync(bracketPath, JSON.stringify(bracket, null, 2));
-        return interaction.reply(`🏆 **TOURNAMENT CHAMPION:** <@${winnerId}>`);
-      }
-    }
-
-    fs.writeFileSync(bracketPath, JSON.stringify(bracket, null, 2));
-
-    interaction.reply("Result recorded. Bracket updated.");
+    return interaction.reply({ content: 'Match reported and leaderboard updated!', ephemeral: true });
   }
 };
-
 
 

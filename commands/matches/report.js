@@ -1,52 +1,57 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { matchService } = require('../../services/matchService');
-const { playerService } = require('../../services/playerService');
+const fs = require("fs");
+const path = require("path");
+const { calculateLeaderboards } = require("../../utils/leaderboardCalc");
+const { rankSystem } = require("../../utils/rankSystem");
+
+const playersPath = path.join(__dirname, "../../data/players.json");
+const matchesPath = path.join(__dirname, "../../data/matches.json");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('report')
-    .setDescription('Report a match result')
-    .addUserOption(option =>
-      option.setName('opponent')
-        .setDescription('The player you played against')
-        .setRequired(true))
-    .addStringOption(option =>
-      option.setName('result')
-        .setDescription('Match result')
-        .setRequired(true)
-        .addChoices(
-          { name: 'Win', value: 'win' },
-          { name: 'Loss', value: 'loss' }
-        )),
-        
+  name: "report",
+  description: "Report a match result",
+
   async execute(interaction) {
-    try {
-      const reporter = interaction.user;
-      const opponentUser = interaction.options.getUser('opponent');
-      const result = interaction.options.getString('result');
+    const winner = interaction.options.getUser("winner");
+    const loser = interaction.options.getUser("loser");
 
-      if (reporter.id === opponentUser.id) {
-        return interaction.reply({ content: 'You cannot report a match against yourself.', ephemeral: true });
-      }
+    let players = JSON.parse(fs.readFileSync(playersPath, "utf8"));
+    let matches = JSON.parse(fs.readFileSync(matchesPath, "utf8"));
 
-      const player = await playerService.getPlayerByDiscord(reporter.id);
-      const opponent = await playerService.getPlayerByDiscord(opponentUser.id);
-
-      if (!player || !opponent) {
-        return interaction.reply({ content: 'Both players must be registered.', ephemeral: true });
-      }
-
-      await matchService.recordMatch(player, opponent, result);
-
-      await interaction.reply({
-        content: `✅ Match recorded!\n${player.username} **${result.toUpperCase()}** vs ${opponent.username}`,
-        ephemeral: true
-      });
-
-    } catch (err) {
-      console.error(err);
-      await interaction.reply({ content: 'Error recording match.', ephemeral: true });
+    if (!players[winner.id] || !players[loser.id]) {
+      return interaction.reply({ content: "Both players must be registered.", ephemeral: true });
     }
+
+    // 🧮 XP logic
+    const winXP = 25;
+    const lossXP = 10;
+
+    players[winner.id].xp += winXP;
+    players[loser.id].xp += lossXP;
+
+    players[winner.id].wins += 1;
+    players[loser.id].losses += 1;
+
+    players[winner.id].rank = rankSystem.getRank(players[winner.id].xp);
+    players[loser.id].rank = rankSystem.getRank(players[loser.id].xp);
+
+    // 💾 Save players
+    fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+
+    // 📝 Save match history
+    matches.push({
+      winner: winner.id,
+      loser: loser.id,
+      date: new Date().toISOString()
+    });
+
+    fs.writeFileSync(matchesPath, JSON.stringify(matches, null, 2));
+
+    // 🏆 Recalculate leaderboard
+    calculateLeaderboards();
+
+    interaction.reply(
+      `🏁 Match recorded!\n**${winner.username}** defeated **${loser.username}**\n+${winXP} XP / +${lossXP} XP`
+    );
   }
 };
 

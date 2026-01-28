@@ -1,44 +1,26 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { playerService } = require('../../services/playerService');
+const fs = require('fs');
+const path = require('path');
+const { syncToSite } = require('../../utils/syncToSite');
+
+const playersPath = path.join(__dirname, '../../data/players.json');
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('register')
-    .setDescription('Register as a new player in KartKings')
-    .addStringOption(option =>
-      option.setName('username')
-        .setDescription('Your in-game display name')
-        .setRequired(true)
-    )
-    .addStringOption(option =>
-      option.setName('team')
-        .setDescription('Choose your starting team')
-        .setRequired(true)
-        .addChoices(
-          { name: 'Red', value: 'red' },
-          { name: 'Blue', value: 'blue' },
-          { name: 'Green', value: 'green' },
-          { name: 'Yellow', value: 'yellow' },
-          { name: 'Purple', value: 'purple' },
-          { name: 'Orange', value: 'orange' }
-        )
-    ),
+  name: 'link',
+  description: 'Link your Discord to your profile',
   async execute(interaction) {
-    const username = interaction.options.getString('username');
-    const team = interaction.options.getString('team');
+    const userId = interaction.user.id;
+    const profileName = interaction.options.getString('profile');
 
-    try {
-      const result = await playerService.registerPlayer(interaction.user.id, username, team);
+    const players = JSON.parse(fs.readFileSync(playersPath));
+    const existing = players.find(p => p.name.toLowerCase() === profileName.toLowerCase());
 
-      if (result.success) {
-        await interaction.reply({ content: `🎉 Welcome **${username}**! You have joined the **${team}** team.`, ephemeral: true });
-      } else {
-        await interaction.reply({ content: `⚠️ ${result.message}`, ephemeral: true });
-      }
-    } catch (error) {
-      console.error('Error registering player:', error);
-      await interaction.reply({ content: '❌ Something went wrong during registration.', ephemeral: true });
-    }
+    if (!existing) return interaction.reply({ content: 'Profile not found.', ephemeral: true });
+
+    existing.discordId = userId;
+    fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+    syncToSite('players.json'); // 🔥 live update
+
+    return interaction.reply({ content: `Profile ${profileName} linked!`, ephemeral: true });
   }
 };
 

@@ -26,12 +26,10 @@ module.exports = {
           `Win Rate: ${winRate}%`,
         ephemeral: true
       });
-
     } catch (err) {
       console.error(err);
       await interaction.reply({ content: 'Error fetching stats.', ephemeral: true });
     }
   }
 };
-
 

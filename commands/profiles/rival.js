@@ -10,6 +10,7 @@ module.exports = {
         .setDescription('Mention a rival to compare stats')
         .setRequired(true)
     ),
+
   async execute(interaction) {
     try {
       const user = interaction.user;
@@ -34,4 +35,5 @@ module.exports = {
     }
   }
 };
+
 

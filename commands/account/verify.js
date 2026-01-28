@@ -4,20 +4,19 @@ const { playerService } = require('../../services/playerService');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('verify')
-    .setDescription('Verify your KartKings account is linked to Discord'),
+    .setDescription('Verify your linked KartKings account to access commands'),
   async execute(interaction) {
     try {
-      const player = await playerService.getByDiscordId(interaction.user.id);
+      const player = await playerService.getPlayerByDiscord(interaction.user.id);
 
       if (player) {
-        await interaction.reply({ content: `✅ Your account is verified! Player ID: ${player.id}`, ephemeral: true });
+        await interaction.reply({ content: `✅ Your account **${player.username}** is verified!`, ephemeral: true });
       } else {
-        await interaction.reply({ content: `⚠️ No linked account found. Use /link first.`, ephemeral: true });
+        await interaction.reply({ content: '⚠️ You do not have a linked KartKings account. Use `/link` first.', ephemeral: true });
       }
     } catch (error) {
-      console.error('Error verifying account:', error);
-      await interaction.reply({ content: '❌ Something went wrong while verifying your account.', ephemeral: true });
+      console.error('Error verifying player:', error);
+      await interaction.reply({ content: '❌ Something went wrong during verification.', ephemeral: true });
     }
   }
 };
-

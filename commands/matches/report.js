@@ -5,40 +5,47 @@ const { playerService } = require('../../services/playerService');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('report')
-    .setDescription('Report the result of a match')
-    .addStringOption(option =>
+    .setDescription('Report a match result')
+    .addUserOption(option =>
       option.setName('opponent')
-        .setDescription('Opponent player ID')
+        .setDescription('The player you played against')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('result')
+        .setDescription('Match result')
         .setRequired(true)
-    )
-    .addIntegerOption(option =>
-      option.setName('your_score')
-        .setDescription('Your score')
-        .setRequired(true)
-    )
-    .addIntegerOption(option =>
-      option.setName('opponent_score')
-        .setDescription('Opponent score')
-        .setRequired(true)
-    ),
+        .addChoices(
+          { name: 'Win', value: 'win' },
+          { name: 'Loss', value: 'loss' }
+        )),
+        
   async execute(interaction) {
-    const opponentId = interaction.options.getString('opponent');
-    const yourScore = interaction.options.getInteger('your_score');
-    const opponentScore = interaction.options.getInteger('opponent_score');
-
     try {
-      const player = await playerService.getPlayerByDiscord(interaction.user.id);
-      const opponent = await playerService.getPlayerById(opponentId);
+      const reporter = interaction.user;
+      const opponentUser = interaction.options.getUser('opponent');
+      const result = interaction.options.getString('result');
 
-      if (!player) return interaction.reply({ content: '⚠️ You must link your account first using `/link`.', ephemeral: true });
-      if (!opponent) return interaction.reply({ content: '⚠️ Opponent not found.', ephemeral: true });
+      if (reporter.id === opponentUser.id) {
+        return interaction.reply({ content: 'You cannot report a match against yourself.', ephemeral: true });
+      }
 
-      await matchService.recordMatch(player.id, opponent.id, yourScore, opponentScore);
+      const player = await playerService.getPlayerByDiscord(reporter.id);
+      const opponent = await playerService.getPlayerByDiscord(opponentUser.id);
 
-      await interaction.reply({ content: `🏁 Match recorded: **${player.username} ${yourScore} - ${opponentScore} ${opponent.username}**`, ephemeral: true });
-    } catch (error) {
-      console.error('Error reporting match:', error);
-      await interaction.reply({ content: '❌ Something went wrong while reporting the match.', ephemeral: true });
+      if (!player || !opponent) {
+        return interaction.reply({ content: 'Both players must be registered.', ephemeral: true });
+      }
+
+      await matchService.recordMatch(player, opponent, result);
+
+      await interaction.reply({
+        content: `✅ Match recorded!\n${player.username} **${result.toUpperCase()}** vs ${opponent.username}`,
+        ephemeral: true
+      });
+
+    } catch (err) {
+      console.error(err);
+      await interaction.reply({ content: 'Error recording match.', ephemeral: true });
     }
   }
 };

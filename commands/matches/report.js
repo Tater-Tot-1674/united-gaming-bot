@@ -1,58 +1,77 @@
 const fs = require("fs");
 const path = require("path");
-const { calculateLeaderboards } = require("../../utils/leaderboardCalc");
-const { rankSystem } = require("../../utils/rankSystem");
+const { addWin } = require("../../utils/leaderboardCalc");
 
-const playersPath = path.join(__dirname, "../../data/players.json");
-const matchesPath = path.join(__dirname, "../../data/matches.json");
+const bracketPath = path.join(__dirname, "../../data/bracket.json");
 
 module.exports = {
   name: "report",
   description: "Report a match result",
 
+  options: [
+    {
+      name: "winner",
+      type: 6, // USER
+      description: "Who won the match?",
+      required: true
+    }
+  ],
+
   async execute(interaction) {
-    const winner = interaction.options.getUser("winner");
-    const loser = interaction.options.getUser("loser");
+    const winnerId = interaction.options.getUser("winner").id;
 
-    let players = JSON.parse(fs.readFileSync(playersPath, "utf8"));
-    let matches = JSON.parse(fs.readFileSync(matchesPath, "utf8"));
+    let bracket = JSON.parse(fs.readFileSync(bracketPath, "utf8"));
+    const roundIndex = bracket.currentRound;
+    const round = bracket.rounds[roundIndex];
 
-    if (!players[winner.id] || !players[loser.id]) {
-      return interaction.reply({ content: "Both players must be registered.", ephemeral: true });
+    let matchFound = false;
+
+    for (let i = 0; i < round.length; i++) {
+      const match = round[i];
+
+      if (match.winner) continue;
+
+      if (match.p1 === winnerId || match.p2 === winnerId) {
+        match.winner = winnerId;
+        matchFound = true;
+
+        // 📊 leaderboard update
+        addWin(winnerId);
+
+        // ➡️ Advance to next round
+        const nextRound = bracket.rounds[roundIndex + 1];
+
+        if (nextRound) {
+          const slot = Math.floor(i / 2);
+          if (i % 2 === 0) nextRound[slot].p1 = winnerId;
+          else nextRound[slot].p2 = winnerId;
+        }
+
+        break;
+      }
     }
 
-    // 🧮 XP logic
-    const winXP = 25;
-    const lossXP = 10;
+    if (!matchFound)
+      return interaction.reply({ content: "Match not found.", ephemeral: true });
 
-    players[winner.id].xp += winXP;
-    players[loser.id].xp += lossXP;
+    // ✅ Check if round finished
+    const roundDone = round.every(m => m.winner);
 
-    players[winner.id].wins += 1;
-    players[loser.id].losses += 1;
+    if (roundDone) {
+      bracket.currentRound++;
 
-    players[winner.id].rank = rankSystem.getRank(players[winner.id].xp);
-    players[loser.id].rank = rankSystem.getRank(players[loser.id].xp);
+      // 🏆 Tournament winner?
+      if (bracket.currentRound >= bracket.rounds.length) {
+        fs.writeFileSync(bracketPath, JSON.stringify(bracket, null, 2));
+        return interaction.reply(`🏆 **TOURNAMENT CHAMPION:** <@${winnerId}>`);
+      }
+    }
 
-    // 💾 Save players
-    fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+    fs.writeFileSync(bracketPath, JSON.stringify(bracket, null, 2));
 
-    // 📝 Save match history
-    matches.push({
-      winner: winner.id,
-      loser: loser.id,
-      date: new Date().toISOString()
-    });
-
-    fs.writeFileSync(matchesPath, JSON.stringify(matches, null, 2));
-
-    // 🏆 Recalculate leaderboard
-    calculateLeaderboards();
-
-    interaction.reply(
-      `🏁 Match recorded!\n**${winner.username}** defeated **${loser.username}**\n+${winXP} XP / +${lossXP} XP`
-    );
+    interaction.reply("Result recorded. Bracket updated.");
   }
 };
+
 
 

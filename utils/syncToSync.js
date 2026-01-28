@@ -1,17 +1,20 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
-const siteDataPath = path.join(process.cwd(), '../kartkings-site/data');
+// Paths
+const botDataPath = path.join(__dirname, '../data');
+const siteDataPath = path.join(__dirname, '../../kartkings-site/data'); // adjust if repo structure differs
 
-export async function syncToSite(fileName, data) {
+function syncToSite(filename) {
   try {
-    const filePath = path.join(siteDataPath, fileName);
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-    console.log(`Synced ${fileName} to site data.`);
-    return true;
-  } catch (error) {
-    console.error(`Error writing ${fileName} to site:`, error);
-    return false;
+    const source = path.join(botDataPath, filename);
+    const dest = path.join(siteDataPath, filename);
+    fs.copyFileSync(source, dest);
+    console.log(`Synced ${filename} to website.`);
+  } catch (err) {
+    console.error(`Failed to sync ${filename}:`, err);
   }
 }
+
+module.exports = { syncToSite };
 

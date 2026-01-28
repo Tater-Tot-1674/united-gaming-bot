@@ -1,21 +1,48 @@
-// commands/leaderboard/leaderboard.js
-const { SlashCommandBuilder } = require('discord.js');
-const playerService = require('../../services/playerService');
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const leaderboardCalc = require("../../utils/leaderboardCalc");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('leaderboard')
-    .setDescription('Show the top players'),
+    .setName("leaderboard")
+    .setDescription("View the KartKings leaderboard")
+    .addStringOption(option =>
+      option.setName("type")
+        .setDescription("Choose leaderboard type")
+        .setRequired(true)
+        .addChoices(
+          { name: "Weekly", value: "weekly" },
+          { name: "Monthly", value: "monthly" }
+        )
+    ),
+
   async execute(interaction) {
-    const topPlayers = playerService.getLeaderboard({ top: 10 });
+    const type = interaction.options.getString("type");
 
-    if (topPlayers.length === 0) return interaction.reply('No players yet!');
+    const leaderboard = leaderboardCalc.getLeaderboard(type);
 
-    let leaderboardText = '**🏆 Leaderboard**\n';
-    topPlayers.forEach((p, i) => {
-      leaderboardText += `\`${i + 1}.\` ${p.username} — XP: ${p.xp}, Wins: ${p.wins}, Losses: ${p.losses}\n`;
+    if (leaderboard.length === 0) {
+      return interaction.reply({
+        content: "📉 No matches have been recorded yet!",
+        ephemeral: true
+      });
+    }
+
+    const medal = ["🥇", "🥈", "🥉"];
+
+    let description = "";
+
+    leaderboard.slice(0, 10).forEach((player, index) => {
+      const place = medal[index] || `#${index + 1}`;
+      description += `${place} <@${player.id}> — **${player.wins}W-${player.losses}L** (${player.winrate}% WR)\n`;
     });
 
-    await interaction.reply(leaderboardText);
-  },
+    const embed = new EmbedBuilder()
+      .setTitle(`🏆 ${type.charAt(0).toUpperCase() + type.slice(1)} Leaderboard`)
+      .setColor("#FFD700")
+      .setDescription(description)
+      .setFooter({ text: "KartKings Competitive System" })
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed] });
+  }
 };

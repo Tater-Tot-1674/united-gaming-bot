@@ -2,26 +2,23 @@ const fs = require('fs');
 const path = require('path');
 const { syncToSite } = require('./syncToSite');
 
-const weeklyPath = path.join(__dirname, '../data/leaderboard_weekly.json');
-const monthlyPath = path.join(__dirname, '../data/leaderboard_monthly.json');
+const playersPath = path.join(__dirname, '../data/players.json');
+const leaderboardPath = path.join(__dirname, '../data/leaderboard_weekly.json');
 
-function updateLeaderboard(players, winnerId, loserId) {
-  const winner = players.find(p => p.id === winnerId);
-  const loser = players.find(p => p.id === loserId);
+function calculateLeaderboard() {
+  const players = JSON.parse(fs.readFileSync(playersPath));
 
-  // Example scoring
-  winner.wins = (winner.wins || 0) + 1;
-  loser.losses = (loser.losses || 0) + 1;
+  const sorted = players
+    .sort((a, b) => b.xp - a.xp)
+    .map((player, index) => ({
+      rank: index + 1,
+      name: player.name,
+      points: player.xp,
+      discordId: player.discordId
+    }));
 
-  // Sort by wins
-  const sortedWeekly = [...players].sort((a, b) => (b.wins || 0) - (a.wins || 0));
-  fs.writeFileSync(weeklyPath, JSON.stringify(sortedWeekly, null, 2));
+  fs.writeFileSync(leaderboardPath, JSON.stringify(sorted, null, 2));
   syncToSite('leaderboard_weekly.json');
-
-  const sortedMonthly = [...players].sort((a, b) => (b.wins || 0) - (a.wins || 0));
-  fs.writeFileSync(monthlyPath, JSON.stringify(sortedMonthly, null, 2));
-  syncToSite('leaderboard_monthly.json');
 }
 
-module.exports = { updateLeaderboard };
-
+module.exports = { calculateLeaderboard };

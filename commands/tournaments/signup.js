@@ -1,32 +1,57 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { tournamentService } = require('../../services/tournamentService');
-const { playerService } = require('../../services/playerService');
-const { toast } = require('../../utils/githubSync');
+const fs = require("fs");
+const path = require("path");
+
+const playersPath = path.join(__dirname, "../../data/players.json");
+const tournamentsPath = path.join(__dirname, "../../data/tournaments.json");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('tournament-signup')
-    .setDescription('Sign up for an active tournament')
-    .addStringOption(option =>
-      option.setName('tournament')
-        .setDescription('Tournament ID')
-        .setRequired(true)
-    ),
+  name: "signup",
+  description: "Sign up for the active tournament",
+
   async execute(interaction) {
-    const tournamentId = interaction.options.getString('tournament');
-    try {
-      const player = await playerService.getPlayerByDiscord(interaction.user.id);
-      if (!player) return interaction.reply({ content: '⚠️ You must link your account first using `/link`.', ephemeral: true });
+    const user = interaction.user;
 
-      const success = await tournamentService.addParticipant(tournamentId, player.id);
-      if (!success) return interaction.reply({ content: '⚠️ Could not sign up (tournament may be full or closed).', ephemeral: true });
+    let players = JSON.parse(fs.readFileSync(playersPath, "utf8"));
+    let tournaments = JSON.parse(fs.readFileSync(tournamentsPath, "utf8"));
 
-      await interaction.reply({ content: `🎉 You are now signed up for tournament **${tournamentId}**!`, ephemeral: true });
-    } catch (error) {
-      console.error('Error signing up:', error);
-      await interaction.reply({ content: '❌ Something went wrong while signing up.', ephemeral: true });
+    if (!players[user.id]) {
+      return interaction.reply({
+        content: "You must register first using /register.",
+        ephemeral: true
+      });
     }
+
+    // 🏁 Find active tournament or create one
+    let tournament = tournaments.find(t => t.active);
+
+    if (!tournament) {
+      tournament = {
+        id: Date.now(),
+        name: "Weekly KartKings Cup",
+        players: [],
+        active: true,
+        created: new Date().toISOString()
+      };
+      tournaments.push(tournament);
+    }
+
+    // ❌ Prevent double signup
+    if (tournament.players.includes(user.id)) {
+      return interaction.reply({
+        content: "You are already signed up for this tournament.",
+        ephemeral: true
+      });
+    }
+
+    tournament.players.push(user.id);
+
+    fs.writeFileSync(tournamentsPath, JSON.stringify(tournaments, null, 2));
+
+    interaction.reply(
+      `🎮 **${user.username}** has entered the **${tournament.name}**!\nTotal players: ${tournament.players.length}`
+    );
   }
 };
+
 
 

@@ -5,6 +5,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('rank')
     .setDescription('Check your current rank or leaderboard position'),
+
   async execute(interaction) {
     try {
       const player = await playerService.getPlayerByDiscord(interaction.user.id);

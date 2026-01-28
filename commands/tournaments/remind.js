@@ -1,33 +1,30 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { tournamentService } = require('../../services/tournamentService');
-const { playerService } = require('../../services/playerService');
+const fs = require("fs");
+const path = require("path");
+
+const bracketPath = path.join(__dirname, "../../data/bracket.json");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('tournament-remind')
-    .setDescription('Send reminders to participants of a tournament')
-    .addStringOption(option =>
-      option.setName('tournament')
-        .setDescription('Tournament ID')
-        .setRequired(true)
-    ),
+  name: "remind",
+  description: "Remind players about their matches",
+
   async execute(interaction) {
-    const tournamentId = interaction.options.getString('tournament');
+    const bracket = JSON.parse(fs.readFileSync(bracketPath, "utf8"));
 
-    try {
-      const participants = await tournamentService.getParticipants(tournamentId);
-      if (!participants || participants.length === 0) return interaction.reply({ content: '⚠️ No participants found.', ephemeral: true });
+    if (!bracket.rounds.length)
+      return interaction.reply({ content: "No active bracket.", ephemeral: true });
 
-      for (const pid of participants) {
-        const user = await playerService.getPlayerDiscordUser(pid);
-        if (user) user.send(`⏰ Reminder: Tournament **${tournamentId}** is starting soon!`);
+    const round = bracket.rounds[0];
+
+    let msg = "⏰ **Match Reminder!**\nPlayers, play your matches:\n\n";
+
+    round.forEach(match => {
+      if (!match.winner) {
+        msg += `🎮 <@${match.p1}> vs <@${match.p2}>\n`;
       }
+    });
 
-      await interaction.reply({ content: `✅ Reminders sent to all participants of **${tournamentId}**.`, ephemeral: true });
-    } catch (error) {
-      console.error('Error sending reminders:', error);
-      await interaction.reply({ content: '❌ Something went wrong while sending reminders.', ephemeral: true });
-    }
+    interaction.reply(msg);
   }
 };
+
 

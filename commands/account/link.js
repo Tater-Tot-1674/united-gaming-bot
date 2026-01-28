@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { syncToSite } = require('../../utils/syncToSite');
+const { DATA_PATHS } = require('../../config/constants');
 
-const playersPath = path.join(__dirname, '../../data/players.json');
+const playersPath = path.join(__dirname, '../../', DATA_PATHS.PLAYERS);
 
 module.exports = {
   name: 'link',
@@ -14,7 +15,8 @@ module.exports = {
     const players = JSON.parse(fs.readFileSync(playersPath));
     const existing = players.find(p => p.name.toLowerCase() === profileName.toLowerCase());
 
-    if (!existing) return interaction.reply({ content: 'Profile not found.', ephemeral: true });
+    if (!existing)
+      return interaction.reply({ content: 'Profile not found.', ephemeral: true });
 
     existing.discordId = userId;
     fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));

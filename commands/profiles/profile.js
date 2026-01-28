@@ -1,22 +1,24 @@
-const { SlashCommandBuilder } = require("discord.js");
-const fs = require("fs");
+// commands/profiles/profile.js
+const { SlashCommandBuilder } = require('discord.js');
+const playerService = require('../../services/playerService');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("profile")
-    .setDescription("View your KartKings profile"),
-
+    .setName('profile')
+    .setDescription('View your profile or another player\'s')
+    .addUserOption(option =>
+      option.setName('user')
+        .setDescription('Player to view')
+        .setRequired(false)),
   async execute(interaction) {
-    const players = JSON.parse(fs.readFileSync("./data/players.json"));
-    const player = players.find(p => p.discord_id === interaction.user.id);
+    const user = interaction.options.getUser('user') || interaction.user;
+    const player = playerService.getPlayer(user.id);
 
-    if (!player) {
-      return interaction.reply({ content: "You are not registered. Use /register", ephemeral: true });
-    }
+    if (!player) return interaction.reply({ content: '❌ Player not found!', ephemeral: true });
 
-    await interaction.reply(
-      `🏁 **${player.kart_name}**\nWins: ${player.wins}\nLosses: ${player.losses}\nKOs: ${player.kos}\nRank: ${player.rank}`
-    );
-  }
+    await interaction.reply({
+      content: `**${user.username}'s Profile**\nXP: ${player.xp}\nWins: ${player.wins}\nLosses: ${player.losses}`,
+    });
+  },
 };
 

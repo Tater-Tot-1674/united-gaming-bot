@@ -1,35 +1,30 @@
-// General constants for KartKings bot
+const fs = require('fs');
+const path = require('path');
+const { syncToSite } = require('../../utils/syncToSite');
 
-export const RANKS = ['Rookie', 'Bronze', 'Silver', 'Gold', 'Elite', 'Champion'];
+const playersPath = path.join(__dirname, '../../data/players.json');
 
-export const TEAM_COLORS = {
-  red: '#f87171',
-  blue: '#60a5fa',
-  green: '#34d399',
-  yellow: '#facc15',
-  purple: '#a78bfa',
-  orange: '#fb923c'
-};
+module.exports = {
+  name: 'setname',
+  description: 'Set your in-game name',
+  async execute(interaction) {
+    const userId = interaction.user.id;
+    const newName = interaction.options.getString('name');
 
-export const MAX_PARTICIPANTS = 16; // default max for tournaments
+    const players = JSON.parse(fs.readFileSync(playersPath));
+    let player = players.find(p => p.id === userId);
 
-export const XP_PER_WIN = 100;
-export const XP_PER_LOSS = 20;
+    if (!player) {
+      player = { id: userId, name: newName, verified: false };
+      players.push(player);
+    } else {
+      player.name = newName;
+    }
 
-export const MATCH_STAT_KEYS = ['kills', 'deaths', 'assists', 'flagsCaptured'];
+    fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+    syncToSite('players.json'); // 🔥 live update
 
-export const TOURNAMENT_STATUS = {
-  REGISTRATION: 'registration',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed'
-};
-
-// For syncing to the website repo
-export const SITE_REPO_PATH = '../kartkings-site/data/';
-
-export const ANNOUNCEMENT_TYPES = {
-  GENERAL: 'general',
-  EVENT: 'event',
-  UPDATE: 'update'
+    return interaction.reply({ content: `Your in-game name is now ${newName}`, ephemeral: true });
+  }
 };
 

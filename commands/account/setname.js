@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { syncToSite } = require('../../utils/syncToSite');
+const { WEBSITE_REPO, BOT_USER_ID, DISCORD_TOKEN, GITHUB_TOKEN, RENDER_URL } = require('../../config/constants'); // ✅ import constants
 
 const playersPath = path.join(__dirname, '../../data/players.json');
 
@@ -22,9 +23,12 @@ module.exports = {
     }
 
     fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
-    syncToSite('players.json'); // 🔥 live update
+
+    // 🔥 live update with GitHub repo token
+    syncToSite('players.json', WEBSITE_REPO, GITHUB_TOKEN); 
 
     return interaction.reply({ content: `Your in-game name is now ${newName}`, ephemeral: true });
   }
 };
+
 

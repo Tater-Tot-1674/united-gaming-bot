@@ -1,56 +1,72 @@
-// services/playerService.js
 const fs = require('fs');
 const path = require('path');
+const { syncToSite } = require('../utils/syncToSite');
 
-const filePath = path.join(__dirname, '../data/players.json');
+const playersPath = path.join(__dirname, '../data/players.json');
 
 function loadPlayers() {
-  if (!fs.existsSync(filePath)) return [];
-  const raw = fs.readFileSync(filePath);
-  return JSON.parse(raw);
+  return JSON.parse(fs.readFileSync(playersPath));
 }
 
 function savePlayers(players) {
-  fs.writeFileSync(filePath, JSON.stringify(players, null, 2));
+  fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+  syncToSite('players.json'); // 🌍 live site update
 }
 
-function getPlayer(id) {
-  const players = loadPlayers();
-  return players.find(p => p.id === id) || null;
-}
+exports.playerService = {
+  getAllPlayers() {
+    return loadPlayers();
+  },
 
-function addPlayer(player) {
-  const players = loadPlayers();
-  if (!players.find(p => p.id === player.id)) {
-    players.push({ id: player.id, username: player.username, xp: 0, wins: 0, losses: 0 });
+  getPlayerByDiscord(discordId) {
+    const players = loadPlayers();
+    return players.find(p => p.discordId === discordId);
+  },
+
+  getPlayerByName(name) {
+    const players = loadPlayers();
+    return players.find(p => p.name.toLowerCase() === name.toLowerCase());
+  },
+
+  registerPlayer(discordId, username, team) {
+    const players = loadPlayers();
+
+    if (players.find(p => p.discordId === discordId)) {
+      return { success: false, message: 'You are already registered.' };
+    }
+
+    const newPlayer = {
+      id: Date.now().toString(),
+      discordId,
+      name: username,
+      team,
+      xp: 0,
+      wins: 0,
+      losses: 0,
+      rank: 'Rookie',
+      verified: false
+    };
+
+    players.push(newPlayer);
+    savePlayers(players);
+
+    return { success: true };
+  },
+
+  updateStats(winnerId, loserId) {
+    const players = loadPlayers();
+
+    const winner = players.find(p => p.discordId === winnerId);
+    const loser = players.find(p => p.discordId === loserId);
+
+    if (!winner || !loser) return;
+
+    winner.wins += 1;
+    winner.xp += 25;
+
+    loser.losses += 1;
+    loser.xp += 10;
+
     savePlayers(players);
   }
-}
-
-function updatePlayer(id, data) {
-  const players = loadPlayers();
-  const idx = players.findIndex(p => p.id === id);
-  if (idx === -1) return null;
-  players[idx] = { ...players[idx], ...data };
-  savePlayers(players);
-  return players[idx];
-}
-
-function getLeaderboard({ type = 'weekly', top = 10 } = {}) {
-  // Use the weekly/monthly JSONs if needed; fallback to XP sorting
-  const players = loadPlayers();
-  return players
-    .sort((a, b) => (b.xp || 0) - (a.xp || 0))
-    .slice(0, top);
-}
-
-module.exports = {
-  loadPlayers,
-  savePlayers,
-  getPlayer,
-  addPlayer,
-  updatePlayer,
-  getLeaderboard,
 };
-
-

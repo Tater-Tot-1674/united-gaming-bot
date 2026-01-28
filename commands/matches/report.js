@@ -3,9 +3,10 @@ const path = require('path');
 const { syncToSite } = require('../../utils/syncToSite');
 const { updateLeaderboard } = require('../../utils/leaderboardCalc');
 const { updateRank } = require('../../utils/rankSystem');
+const { DATA_PATHS } = require('../../config/constants');
 
-const dataPath = path.join(__dirname, '../../data/matches.json');
-const playersPath = path.join(__dirname, '../../data/players.json');
+const matchesPath = path.join(__dirname, '../../', DATA_PATHS.MATCHES);
+const playersPath = path.join(__dirname, '../../', DATA_PATHS.PLAYERS);
 
 module.exports = {
   name: 'report',
@@ -14,26 +15,26 @@ module.exports = {
     const { winnerId, loserId } = interaction.options;
 
     // Load matches
-    const matches = JSON.parse(fs.readFileSync(dataPath));
+    const matches = JSON.parse(fs.readFileSync(matchesPath));
     matches.push({
       winner: winnerId,
       loser: loserId,
       date: new Date().toISOString()
     });
-    fs.writeFileSync(dataPath, JSON.stringify(matches, null, 2));
-    syncToSite('matches.json'); // 🔥 live update
+    fs.writeFileSync(matchesPath, JSON.stringify(matches, null, 2));
+    syncToSite('matches.json');
 
     // Update leaderboard
     const players = JSON.parse(fs.readFileSync(playersPath));
     updateLeaderboard(players, winnerId, loserId);
     fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
-    syncToSite('players.json'); // 🔥 live update
+    syncToSite('players.json');
 
     // Update ranks
     updateRank(players, winnerId);
     updateRank(players, loserId);
     fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
-    syncToSite('players.json'); // 🔥 live update
+    syncToSite('players.json');
 
     return interaction.reply({ content: 'Match reported and leaderboard updated!', ephemeral: true });
   }

@@ -1,3 +1,9 @@
+const DISCORD_TOKEN = process.env.DISCORDTOKEN;
+const GITHUB_TOKEN = process.env.GITHUBTOKEN;
+const WEBSITE_REPO = process.env.GITHUBREPO;
+const BOT_USER_ID = process.env.BOTUSERID;
+const RENDER_URL = process.env.RENDERSERVICEURL; // optional
+
 const { SlashCommandBuilder } = require('discord.js');
 const { playerService } = require('../../services/playerService');
 
@@ -41,5 +47,6 @@ module.exports = {
     }
   }
 };
+
 
 

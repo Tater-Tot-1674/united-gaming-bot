@@ -1,14 +1,9 @@
-const DISCORD_TOKEN = process.env.DISCORDTOKEN;
-const GITHUB_TOKEN = process.env.GITHUBTOKEN;
-const WEBSITE_REPO = process.env.GITHUBREPO;
-const BOT_USER_ID = process.env.BOTUSERID;
-const RENDER_URL = process.env.RENDERSERVICEURL; // optional
-
 const fs = require('fs');
 const path = require('path');
+const { DATA_PATHS } = require('../../utils/constants');
 const { syncToSite } = require('../../utils/syncToSite');
 
-const announcementsPath = path.join(__dirname, '../../data/announcements.json');
+const announcementsPath = path.join(__dirname, '../../', DATA_PATHS.ANNOUNCEMENTS);
 
 module.exports = {
   name: 'announce',
@@ -17,7 +12,7 @@ module.exports = {
     const content = interaction.options.getString('message');
     const user = interaction.user.username;
 
-    const announcements = JSON.parse(fs.readFileSync(announcementsPath));
+    const announcements = JSON.parse(fs.readFileSync(announcementsPath, 'utf8'));
     const newAnnouncement = {
       id: Date.now().toString(),
       author: user,
@@ -27,7 +22,7 @@ module.exports = {
     announcements.push(newAnnouncement);
 
     fs.writeFileSync(announcementsPath, JSON.stringify(announcements, null, 2));
-    syncToSite('announcements.json'); // 🔥 live update
+    syncToSite('announcements.json');
 
     return interaction.reply({ content: 'Announcement posted!', ephemeral: true });
   }

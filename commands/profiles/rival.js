@@ -1,38 +1,27 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { playerService } = require('../../services/playerService');
+const fs = require('fs');
+const path = require('path');
+const { DATA_PATHS } = require('../../utils/constants');
+
+const playersPath = path.join(__dirname, '../../', DATA_PATHS.PLAYERS);
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('rival')
-    .setDescription('Compare your stats against a rival player')
-    .addUserOption(option =>
-      option.setName('player')
-        .setDescription('Mention a rival to compare stats')
-        .setRequired(true)
-    ),
-
+  name: 'rival',
+  description: 'View your top rivals',
   async execute(interaction) {
-    try {
-      const user = interaction.user;
-      const rivalUser = interaction.options.getUser('player');
+    const userId = interaction.user.id;
+    const players = JSON.parse(fs.readFileSync(playersPath, 'utf8'));
+    const me = players.find(p => p.discordId === userId);
 
-      const player = await playerService.getPlayerByDiscord(user.id);
-      const rival = await playerService.getPlayerByDiscord(rivalUser.id);
+    if (!me) return interaction.reply({ content: 'You are not registered.', ephemeral: true });
 
-      if (!player || !rival) return interaction.reply({ content: '⚠️ Player not found.', ephemeral: true });
+    const rivals = players
+      .filter(p => p.username !== me.username)
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 3)
+      .map(p => `${p.username} — ${p.points} pts`)
+      .join('\n');
 
-      await interaction.reply({
-        content: `⚔️ **${player.username} vs ${rival.username}**\n` +
-                 `Wins: ${player.wins || 0} vs ${rival.wins || 0}\n` +
-                 `Losses: ${player.losses || 0} vs ${rival.losses || 0}\n` +
-                 `Rank: ${player.rank || 'Unranked'} vs ${rival.rank || 'Unranked'}\n` +
-                 `XP: ${player.xp || 0} vs ${rival.xp || 0}`,
-        ephemeral: true
-      });
-    } catch (error) {
-      console.error('Error comparing rivals:', error);
-      await interaction.reply({ content: '❌ Something went wrong while comparing stats.', ephemeral: true });
-    }
+    return interaction.reply({ content: `⚔️ **Your Top Rivals:**\n${rivals}`, ephemeral: false });
   }
 };
 

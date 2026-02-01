@@ -7,28 +7,29 @@ const playersPath = path.join(__dirname, '../../', DATA_PATHS.PLAYERS);
 
 module.exports = {
   name: 'link',
-  description: 'Link your Discord account to a player profile',
+  description: 'Link your Discord account to a player',
   async execute(interaction) {
-    try {
-      const discordId = interaction.user.id;
+    const discordId = interaction.user.id;
+    const playerTag = interaction.options.getString('player_tag');
 
-      let players = JSON.parse(fs.readFileSync(playersPath));
+    let players = JSON.parse(fs.readFileSync(playersPath, 'utf8'));
 
-      const player = players.find(p => p.discordId === discordId);
-      if (!player) {
-        return interaction.reply({ content: '⚠️ No player found to link.', ephemeral: true });
-      }
-
-      player.discordLinked = true;
-
-      fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
-      syncToSite(DATA_PATHS.PLAYERS);
-
-      return interaction.reply({ content: '✅ Your account has been linked!', ephemeral: true });
-    } catch (err) {
-      console.error('Error linking account:', err);
-      return interaction.reply({ content: '❌ Something went wrong while linking.', ephemeral: true });
+    const existing = players.find(p => p.discordId === discordId);
+    if (existing) {
+      return interaction.reply({ content: 'Your account is already linked!', ephemeral: true });
     }
+
+    const player = players.find(p => p.username === playerTag);
+    if (!player) {
+      return interaction.reply({ content: 'Player not found.', ephemeral: true });
+    }
+
+    player.discordId = discordId;
+
+    fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
+    syncToSite('players.json');
+
+    return interaction.reply({ content: `Successfully linked to **${player.username}**!`, ephemeral: true });
   }
 };
 

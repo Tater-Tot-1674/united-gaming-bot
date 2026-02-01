@@ -1,9 +1,8 @@
-// server.js
+require('dotenv').config();
 const express = require('express');
 const { Client, GatewayIntentBits } = require('discord.js');
-require('dotenv').config();
 
-// --- Health ping server ---
+// --- Health server ---
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.get('/health', (req, res) => res.send('Bot is alive!'));

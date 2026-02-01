@@ -1,16 +1,16 @@
-require('dotenv').config();
+// index.js
 const fs = require('fs');
 const path = require('path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
+require('dotenv').config();
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
-});
+// Create a new Discord client
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// Store commands
+// Collection for commands
 client.commands = new Collection();
 
-// Load command files
+// Load command files dynamically
 const commandsPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(commandsPath);
 
@@ -22,20 +22,21 @@ for (const folder of commandFolders) {
     const filePath = path.join(folderPath, file);
     const command = require(filePath);
 
-    if (command.data && command.execute) {
-      client.commands.set(command.data.name, command);
-    } else if (command.name && command.execute) {
-      client.commands.set(command.name, command);
+    // Ensure command has required properties
+    if ('data' in command && 'execute' in command) {
+      client.commands.set(command.data?.name || command.name, command);
+    } else {
+      console.warn(`[WARNING] The command at ${filePath} is missing "data" or "execute".`);
     }
   }
 }
 
-// When bot is ready
+// Event: bot ready
 client.once('ready', () => {
-  console.log(`🤖 Logged in as ${client.user.tag}`);
+  console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-// Slash command handler
+// Event: interaction create
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -46,13 +47,9 @@ client.on('interactionCreate', async interaction => {
     await command.execute(interaction);
   } catch (error) {
     console.error(error);
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: '❌ Error running command.', ephemeral: true });
-    } else {
-      await interaction.reply({ content: '❌ Error running command.', ephemeral: true });
-    }
+    await interaction.reply({ content: '❌ There was an error while executing this command.', ephemeral: true });
   }
 });
 
-// Login
-client.login(process.env.TOKEN);
+// Login to Discord
+client.login(process.env.DISCORD_TOKEN);

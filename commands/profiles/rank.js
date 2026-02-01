@@ -1,25 +1,19 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { playerService } = require('../../services/playerService');
+const fs = require('fs');
+const path = require('path');
+const { DATA_PATHS } = require('../../utils/constants');
+
+const leaderboardPath = path.join(__dirname, '../../', DATA_PATHS.LEADERBOARD_WEEKLY);
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('rank')
-    .setDescription('Check your current rank or leaderboard position'),
-
+  name: 'rank',
+  description: 'View the weekly leaderboard',
   async execute(interaction) {
-    try {
-      const player = await playerService.getPlayerByDiscord(interaction.user.id);
-      if (!player) return interaction.reply({ content: '⚠️ Player not found.', ephemeral: true });
+    const leaderboard = JSON.parse(fs.readFileSync(leaderboardPath, 'utf8'));
+    const topPlayers = leaderboard.slice(0, 10)
+      .map((p, i) => `${i + 1}. ${p.username} — ${p.points} pts`)
+      .join('\n');
 
-      await interaction.reply({
-        content: `🏅 **${player.username}** is currently ranked **#${player.rank || 'Unranked'}**\n` +
-                 `Wins: ${player.wins || 0}, Losses: ${player.losses || 0}, XP: ${player.xp || 0}`,
-        ephemeral: true
-      });
-    } catch (error) {
-      console.error('Error fetching rank:', error);
-      await interaction.reply({ content: '❌ Something went wrong while fetching rank.', ephemeral: true });
-    }
+    return interaction.reply({ content: `🏆 **Weekly Leaderboard:**\n${topPlayers}`, ephemeral: false });
   }
 };
 

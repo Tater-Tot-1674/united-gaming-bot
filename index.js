@@ -1,38 +1,58 @@
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const { syncToSite } = require('./utils/syncToSite');
 
-const DISCORD_TOKEN = process.env.DISCORDTOKEN;
-const BOT_USER_ID = process.env.BOTUSERID;
-const GITHUB_TOKEN = process.env.GITHUBTOKEN;
-const WEBSITE_REPO = process.env.GITHUBREPO;
-const RENDER_URL = process.env.RENDERSERVICEURL; // optional
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
-
+// Store commands
 client.commands = new Collection();
 
-// Load commands
+// Load command files
 const commandsPath = path.join(__dirname, 'commands');
-fs.readdirSync(commandsPath).forEach(category => {
-  const categoryPath = path.join(commandsPath, category);
-  if (!fs.lstatSync(categoryPath).isDirectory()) return;
+const commandFolders = fs.readdirSync(commandsPath);
 
-  fs.readdirSync(categoryPath).forEach(file => {
-    if (!file.endsWith('.js')) return;
-    const command = require(path.join(categoryPath, file));
-    client.commands.set(command.data?.name || command.name, command);
-  });
+for (const folder of commandFolders) {
+  const folderPath = path.join(commandsPath, folder);
+  const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
+
+  for (const file of commandFiles) {
+    const filePath = path.join(folderPath, file);
+    const command = require(filePath);
+
+    if (command.data && command.execute) {
+      client.commands.set(command.data.name, command);
+    } else if (command.name && command.execute) {
+      client.commands.set(command.name, command);
+    }
+  }
+}
+
+// When bot is ready
+client.once('ready', () => {
+  console.log(`🤖 Logged in as ${client.user.tag}`);
 });
 
-// Load events
-const eventsPath = path.join(__dirname, 'events');
-fs.readdirSync(eventsPath).forEach(file => {
-  if (!file.endsWith('.js')) return;
-  const event = require(path.join(eventsPath, file));
-  if (event.once) client.once(event.name, (...args) => event.execute(...args, client));
-  else client.on(event.name, (...args) => event.execute(...args, client));
+// Slash command handler
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ content: '❌ Error running command.', ephemeral: true });
+    } else {
+      await interaction.reply({ content: '❌ Error running command.', ephemeral: true });
+    }
+  }
 });
 
-client.login(DISCORD_TOKEN);
+// Login
+client.login(process.env.TOKEN);

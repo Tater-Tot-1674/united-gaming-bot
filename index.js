@@ -21,12 +21,6 @@ client.login(DISCORDTOKEN)
 client.once('ready', async () => {
   console.log('🚀 Ready! Bot is online.');
 
-  const commands = [
-    {
-      name: 'ping',
-      description: 'Replies with Pong!'
-    }
-  ];
 
   try {
     const rest = new REST({ version: '10' }).setToken(DISCORDTOKEN);

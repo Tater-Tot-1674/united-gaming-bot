@@ -36,4 +36,3 @@ client.once('ready', async () => {
     console.error('❌ Failed to deploy commands:', err);
   }
 });
-

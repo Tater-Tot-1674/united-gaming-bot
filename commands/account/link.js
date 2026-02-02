@@ -1,8 +1,9 @@
-const fs = require('fs');
 const path = require('path');
-const { DATA_PATHS } = require('../../utils/constants');
-const { syncToSite } = require('../../utils/syncToSite');
+const fs = require('fs');
+const { DATA_PATHS } = require('../../utils/constants');  // fixed path
+const { syncToSite } = require('../../utils/syncToSite'); // fixed path
 
+// Example usage (adjust your actual command code)
 const playersPath = path.join(__dirname, '../../', DATA_PATHS.PLAYERS);
 
 module.exports = {

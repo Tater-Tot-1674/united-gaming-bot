@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const { syncToSite } = require('../../utils/syncToSite');
+const { DATA_PATHS } = require('../../utils/constants');  // fixed path
 const { WEBSITE_REPO, BOT_USER_ID, DISCORD_TOKEN, GITHUB_TOKEN, RENDER_URL } = require('../../config/constants'); // ✅ import constants
 
-const playersPath = path.join(__dirname, '../../data/players.json');
+const playersPath = path.join(__dirname, '../../', DATA_PATHS.PLAYERS);
 
 module.exports = {
   name: 'setname',

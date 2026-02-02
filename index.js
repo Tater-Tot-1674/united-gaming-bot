@@ -1,74 +1,39 @@
-// index.js
 const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
-require('dotenv').config();
 const express = require('express');
 
-// ----- CONFIG -----
-const TOKEN = process.env.DISCORDTOKEN;
-const CLIENT_ID = process.env.BOTUSERID; // bot application ID
-
-if (!TOKEN || !CLIENT_ID) {
-    console.error('❌ Make sure DISCORDTOKEN and BOTUSERID are set!');
-    process.exit(1);
-}
-
-// Example commands array
-const commands = [
-    {
-        name: 'ping',
-        description: 'Replies with Pong!'
-    },
-    {
-        name: 'hello',
-        description: 'Greets the user'
-    }
-];
-
-// ----- DEPLOY GLOBAL SLASH COMMANDS -----
-async function deployCommands() {
-    const rest = new REST({ version: '10' }).setToken(TOKEN);
-
-    try {
-        console.log('🚀 Deploying global slash commands...');
-        await rest.put(
-            Routes.applicationCommands(CLIENT_ID),
-            { body: commands }
-        );
-        console.log('✅ Slash commands deployed globally!');
-    } catch (error) {
-        console.error('❌ Error deploying commands:', error);
-    }
-}
-
-// ----- CREATE BOT CLIENT -----
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const TOKEN = process.env.DISCORDTOKEN;
+const CLIENT_ID = process.env.BOTUSERID;
 
-client.once('ready', () => {
-    console.log(`✅ Logged in as ${client.user.tag}!`);
-});
-
-// Handle command interactions
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-
-    const { commandName } = interaction;
-
-    if (commandName === 'ping') {
-        await interaction.reply('Pong!');
-    } else if (commandName === 'hello') {
-        await interaction.reply(`Hello, ${interaction.user.username}!`);
-    }
-});
-
-// ----- START BOT -----
-(async () => {
-    console.log('🔑 Starting Discord bot...');
-    await deployCommands();
-    await client.login(TOKEN);
-})();
-
-// ----- UNUSED PORT FOR RENDER -----
+// Start a dummy server for Render
 const app = express();
-const PORT = process.env.PORT || 10000;
-app.get('/', (req, res) => res.send('Bot is running!'));
+const PORT = 10000;
+app.get('/', (req, res) => res.send('Bot is deployed!'));
 app.listen(PORT, () => console.log(`🌐 Health server listening on port ${PORT}`));
+
+// Log the bot in
+console.log('🔑 Starting Discord bot...');
+client.login(TOKEN)
+  .then(() => console.log(`✅ Bot logged in as ${client.user.tag}`))
+  .catch(err => console.error('❌ Failed to log in:', err));
+
+// Optional: deploy commands after login (you can comment this out for now)
+client.once('ready', async () => {
+  console.log('🚀 Ready! Bot is online.');
+
+  const commands = [
+    {
+      name: 'ping',
+      description: 'Replies with Pong!'
+    }
+  ];
+
+  try {
+    const rest = new REST({ version: '10' }).setToken(TOKEN);
+    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+    console.log('🌍 Global slash commands deployed!');
+  } catch (err) {
+    console.error('❌ Failed to deploy commands:', err);
+  }
+});
+

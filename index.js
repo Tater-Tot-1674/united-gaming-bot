@@ -1,62 +1,50 @@
-// index.js
+const { Client, GatewayIntentBits, Collection } = require('discord.js');
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { Client, Collection, GatewayIntentBits } = require('discord.js');
 
-// Read Render env variables
-const DISCORDTOKEN = process.env.DISCORDTOKEN;
-const BOTUSERID = process.env.BOTUSERID;
+console.log('Starting Discord bot...');
 
-// Check required env vars
-if (!DISCORDTOKEN || !BOTUSERID) {
-  console.error('❌ Missing required environment variables (DISCORDTOKEN or BOTUSERID)');
-  process.exit(1);
-}
-
-// Create Discord client
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-
-// Load commands
+// Create client
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 client.commands = new Collection();
+
+// Load commands dynamically
 const commandsPath = path.join(__dirname, 'commands');
-if (fs.existsSync(commandsPath)) {
-  const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
-  for (const file of commandFiles) {
-    const command = require(path.join(commandsPath, file));
-    if (('data' in command && 'execute' in command) || ('name' in command && 'execute' in command)) {
-      client.commands.set(command.data?.name || command.name, command);
-    } else {
-      console.warn(`[WARNING] Command file ${file} missing "data" or "name" property`);
-    }
-  }
-}
-
-// Command interaction
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-
-  try {
-    await command.execute(interaction);
-  } catch (err) {
-    console.error(err);
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: '❌ Error executing command.', ephemeral: true });
-    } else {
-      await interaction.reply({ content: '❌ Error executing command.', ephemeral: true });
-    }
+fs.readdirSync(commandsPath).forEach(folder => {
+  const folderPath = path.join(commandsPath, folder);
+  if (fs.lstatSync(folderPath).isDirectory()) {
+    fs.readdirSync(folderPath).filter(file => file.endsWith('.js')).forEach(file => {
+      const filePath = path.join(folderPath, file);
+      const command = require(filePath);
+      if (command.data && command.execute) {
+        client.commands.set(command.data.name || command.name, command);
+      }
+    });
   }
 });
 
 // Login
-client.login(DISCORDTOKEN)
-  .then(() => console.log(`✅ Logged in as ${client.user.tag}`))
-  .catch(err => {
-    console.error('❌ Bot login failed:', err);
-    process.exit(1);
-  });
+const token = process.env.DISCORDTOKEN;
+if (!token) {
+  console.error('No Discord token set in environment variables!');
+  process.exit(1);
+}
 
-// Export client for server.js if needed
-module.exports = client;
+client.once('ready', () => {
+  console.log(`Logged in as ${client.user.tag}!`);
+});
 
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+  try {
+    await command.execute(interaction);
+  } catch (err) {
+    console.error(err);
+    await interaction.reply({ content: 'Error executing command', ephemeral: true });
+  }
+});
+
+client.login(token);

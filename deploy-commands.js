@@ -1,47 +1,52 @@
 // deploy-commands.js
+const { REST, Routes } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const { REST, Routes } = require('discord.js');
-require('dotenv').config();
 
-const DISCORDTOKEN = process.env.DISCORDTOKEN;
-const BOTUSERID = process.env.BOTUSERID;
+// Load environment variables
+const TOKEN = process.env.DISCORDTOKEN;
+const CLIENT_ID = process.env.BOTUSERID;
 
-if (!DISCORDTOKEN || !BOTUSERID) {
-  console.error('❌ Missing DISCORDTOKEN or BOTUSERID in environment variables');
-  process.exit(1);
+if (!TOKEN || !CLIENT_ID) {
+    console.error('❌ DISCORDTOKEN or BOTUSERID not set in environment variables');
+    process.exit(1);
 }
 
-// Load all commands
+// Load all command files from ./commands
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
-if (fs.existsSync(commandsPath)) {
-  const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
-  for (const file of commandFiles) {
-    const command = require(path.join(commandsPath, file));
-    if (command.data?.toJSON) {
-      commands.push(command.data.toJSON());
+const commandFolders = fs.readdirSync(commandsPath);
+
+for (const folder of commandFolders) {
+    const folderPath = path.join(commandsPath, folder);
+    const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
+
+    for (const file of commandFiles) {
+        const filePath = path.join(folderPath, file);
+        const command = require(filePath);
+
+        if ('data' in command && 'execute' in command) {
+            commands.push(command.data.toJSON());
+        } else {
+            console.warn(`⚠️ Command at ${filePath} missing required "data" or "execute" property.`);
+        }
     }
-  }
-} else {
-  console.warn('⚠️ No commands folder found');
 }
 
-// Deploy commands to Discord
-const rest = new REST({ version: '10' }).setToken(DISCORDTOKEN);
+// Deploy commands using REST
+const rest = new REST({ version: '10' }).setToken(TOKEN);
 
 (async () => {
-  try {
-    console.log(`🚀 Started refreshing ${commands.length} application (/) commands.`);
+    try {
+        console.log(`🚀 Started refreshing ${commands.length} application (/) commands.`);
 
-    await rest.put(
-      Routes.applicationCommands(BOTUSERID),
-      { body: commands }
-    );
+        await rest.put(
+            Routes.applicationCommands(CLIENT_ID),
+            { body: commands },
+        );
 
-    console.log(`✅ Successfully registered ${commands.length} commands globally.`);
-  } catch (error) {
-    console.error(error);
-  }
+        console.log(`✅ Successfully reloaded ${commands.length} application (/) commands.`);
+    } catch (error) {
+        console.error('❌ Error deploying commands:', error);
+    }
 })();
-

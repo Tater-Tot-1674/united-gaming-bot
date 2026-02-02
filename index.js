@@ -6,10 +6,9 @@ const express = require('express');
 // ----- CONFIG -----
 const TOKEN = process.env.DISCORDTOKEN;
 const CLIENT_ID = process.env.BOTUSERID; // bot application ID
-const GUILD_ID = process.env.GUILDID; // optional: use for guild-specific commands
 
-if (!TOKEN || !CLIENT_ID || !GUILD_ID) {
-    console.error('❌ Make sure DISCORDTOKEN, BOTUSERID, and GUILDID are set!');
+if (!TOKEN || !CLIENT_ID) {
+    console.error('❌ Make sure DISCORDTOKEN and BOTUSERID are set!');
     process.exit(1);
 }
 
@@ -25,17 +24,17 @@ const commands = [
     }
 ];
 
-// ----- DEPLOY SLASH COMMANDS -----
+// ----- DEPLOY GLOBAL SLASH COMMANDS -----
 async function deployCommands() {
     const rest = new REST({ version: '10' }).setToken(TOKEN);
 
     try {
-        console.log('🚀 Deploying slash commands...');
+        console.log('🚀 Deploying global slash commands...');
         await rest.put(
-            Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+            Routes.applicationCommands(CLIENT_ID),
             { body: commands }
         );
-        console.log('✅ Slash commands deployed!');
+        console.log('✅ Slash commands deployed globally!');
     } catch (error) {
         console.error('❌ Error deploying commands:', error);
     }
@@ -48,7 +47,7 @@ client.once('ready', () => {
     console.log(`✅ Logged in as ${client.user.tag}!`);
 });
 
-// Optional: handle command interactions
+// Handle command interactions
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -73,4 +72,3 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('Bot is running!'));
 app.listen(PORT, () => console.log(`🌐 Health server listening on port ${PORT}`));
-

@@ -8,9 +8,9 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
-const DISCORD_TOKEN = process.env.DISCORDTOKEN;
+const DISCORDTOKEN = process.env.DISCORDTOKEN;
 
-if (!DISCORD_TOKEN) {
+if (!DISCORDTOKEN) {
     console.error('Error: DISCORDTOKEN environment variable is not set.');
     process.exit(1);
 }
@@ -30,7 +30,7 @@ client.on('messageCreate', async (message) => {
 
 // Login
 console.log('Starting Discord bot...');
-client.login(DISCORD_TOKEN).catch((err) => {
+client.login(DISCORDTOKEN).catch((err) => {
     console.error('Failed to login to Discord:', err);
     process.exit(1);
 });

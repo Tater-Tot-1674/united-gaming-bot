@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const express = require('express');
 
 console.log("Token length:", process.env.DISCORDTOKEN?.length);
 
@@ -24,3 +25,11 @@ client.on('shardError', err => {
 
 console.log("Attempting login...");
 client.login(process.env.DISCORDTOKEN);
+
+// REQUIRED FOR RENDER
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get('/', (req, res) => res.send("Bot running"));
+app.listen(PORT, () => console.log("Health server on port", PORT));
+

@@ -2,24 +2,32 @@ const fs = require('fs');
 const path = require('path');
 const { syncToSite } = require('../utils/syncToSite');
 const { generateBracket } = require('../utils/bracketGen');
+const { DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN } = require('../utils/constants');
 
-const tournamentsPath = path.join(__dirname, '../data/tournaments.json');
-const bracketPath = path.join(__dirname, '../data/bracket.json');
+const tournamentsPath = path.join(__dirname, '../', DATA_PATHS.TOURNAMENTS);
+const bracketPath = path.join(__dirname, '../', DATA_PATHS.BRACKET);
 
 function loadTournaments() {
-  return JSON.parse(fs.readFileSync(tournamentsPath));
+  try {
+    return JSON.parse(fs.readFileSync(tournamentsPath, 'utf8'));
+  } catch {
+    return [];
+  }
 }
 
 function saveTournaments(tournaments) {
   fs.writeFileSync(tournamentsPath, JSON.stringify(tournaments, null, 2));
-  syncToSite('tournaments.json');
+  syncToSite('tournaments.json', WEBSITE_REPO, GITHUB_TOKEN);
 }
 
 exports.tournamentService = {
   signup(tournamentId, userId) {
     const tournaments = loadTournaments();
     const tournament = tournaments.find(t => t.id === tournamentId);
-    if (!tournament) return { success: false, message: 'Tournament not found.' };
+
+    if (!tournament) {
+      return { success: false, message: 'Tournament not found.' };
+    }
 
     tournament.participants = tournament.participants || [];
 
@@ -36,11 +44,13 @@ exports.tournamentService = {
   generateBracket(tournamentId) {
     const tournaments = loadTournaments();
     const tournament = tournaments.find(t => t.id === tournamentId);
+
     if (!tournament) return null;
 
     const bracket = generateBracket(tournament.participants || []);
+
     fs.writeFileSync(bracketPath, JSON.stringify(bracket, null, 2));
-    syncToSite('bracket.json');
+    syncToSite('bracket.json', WEBSITE_REPO, GITHUB_TOKEN);
 
     return tournament.name;
   },
@@ -50,3 +60,4 @@ exports.tournamentService = {
     return tournaments.find(t => t.id === tournamentId);
   }
 };
+

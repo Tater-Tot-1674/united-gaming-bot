@@ -1,63 +1,52 @@
-// utils/syncToSite.js
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
-const { WEBSITE_REPO, GITHUB_TOKEN } = require('./constants');
+import base64
+import json
+import os
+import requests
+from utils.constants import WEBSITE_REPO, GITHUB_TOKEN
 
-// Extract owner + repo from full URL
-function parseRepo(url) {
-  const parts = url.replace('https://github.com/', '').split('/');
-  return { owner: parts[0], repo: parts[1] };
-}
+def parse_repo(url):
+    cleaned = url.replace("https://github.com/", "")
+    owner, repo = cleaned.split("/")[:2]
+    return owner, repo
 
-async function syncToSite(filename, repoOverride, tokenOverride) {
-  const repoURL = repoOverride || WEBSITE_REPO;
-  const token = tokenOverride || GITHUB_TOKEN;
+def sync_to_site(filename, repo_override=None, token_override=None):
+    repo_url = repo_override or WEBSITE_REPO
+    token = token_override or GITHUB_TOKEN
 
-  if (!repoURL || !token) {
-    console.error('❌ Missing WEBSITE_REPO or GITHUB_TOKEN in environment.');
-    return;
-  }
+    if not repo_url or not token:
+        print("❌ Missing WEBSITE_REPO or GITHUB_TOKEN in environment.")
+        return
 
-  const { owner, repo } = parseRepo(repoURL);
+    owner, repo = parse_repo(repo_url)
 
-  const filePath = path.join(__dirname, '../data', filename);
-  const fileContent = fs.readFileSync(filePath, 'utf8');
-  const encodedContent = Buffer.from(fileContent).toString('base64');
+    file_path = os.path.join("data", filename)
+    with open(file_path, "r", encoding="utf8") as f:
+        content = f.read()
 
-  const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/data/${filename}`;
+    encoded = base64.b64encode(content.encode("utf8")).decode("utf8")
 
-  try {
-    // Check if file exists (GET)
-    let sha = null;
-    try {
-      const getRes = await axios.get(apiBase, {
-        headers: { Authorization: `token ${token}` }
-      });
-      sha = getRes.data.sha;
-    } catch {
-      // File does not exist — GitHub will create it
+    api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/data/{filename}"
+
+    # Check if file exists
+    sha = None
+    try:
+        res = requests.get(api_url, headers={"Authorization": f"token {token}"})
+        if res.status_code == 200:
+            sha = res.json().get("sha")
+    except:
+        pass
+
+    payload = {
+        "message": f"Update {filename} via bot",
+        "content": encoded
     }
 
-    // Commit file (PUT)
-    await axios.put(
-      apiBase,
-      {
-        message: `Update ${filename} via bot`,
-        content: encodedContent,
-        sha: sha || undefined
-      },
-      {
-        headers: { Authorization: `token ${token}` }
-      }
-    );
+    if sha:
+        payload["sha"] = sha
 
-    console.log(`📤 Synced ${filename} to website repo.`);
-  } catch (err) {
-    console.error(`❌ Failed to sync ${filename}:`, err.response?.data || err.message);
-  }
-}
-
-module.exports = { syncToSite };
-
+    try:
+        requests.put(api_url, json=payload, headers={"Authorization": f"token {token}"})
+        print(f"📤 Synced {filename} to website repo.")
+    except Exception as e:
+        print(f"❌ Failed to sync {filename}: {e}")
 

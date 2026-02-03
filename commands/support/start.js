@@ -1,20 +1,25 @@
-const { SlashCommandBuilder } = require('discord.js');
+from discord import app_commands
+from discord.ext import commands
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('start')
-    .setDescription('Get started with KartKings'),
+class Start(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
-  async execute(interaction) {
-    return interaction.reply({
-      content:
-        "🏁 **Getting Started:**\n" +
-        "1. `/register` → Create your player profile\n" +
-        "2. `/quickplay` → Join a match\n" +
-        "3. `/profile` → Check your stats\n" +
-        "4. `/signup` → Enter tournaments\n\n" +
-        "Follow these steps and start climbing the ranks!",
-      ephemeral: true
-    });
-  }
-};
+    @app_commands.command(
+        name="start",
+        description="Get started with KartKings"
+    )
+    async def start(self, interaction):
+        text = (
+            "🏁 **Getting Started:**\n"
+            "1. `/register` → Create your player profile\n"
+            "2. `/quickplay` → Join a match\n"
+            "3. `/profile` → Check your stats\n"
+            "4. `/signup` → Enter tournaments\n\n"
+            "Follow these steps and start climbing the ranks!"
+        )
+
+        await interaction.response.send_message(text, ephemeral=True)
+
+async def setup(bot):
+    await bot.add_cog(Start(bot))

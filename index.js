@@ -1,23 +1,23 @@
-// ===============================
-// Imports
-// ===============================
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const { DISCORD_TOKEN, CLIENT_ID } = require('./utils/constants');
+// index.js
 
-// ===============================
-// Environment Validation
-// ===============================
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
+
+// -------------------------------------
+// Environment Variable Check
+// -------------------------------------
 console.log("🔍 Checking environment variables...");
 
-if (!DISCORD_TOKEN) console.error("❌ DISCORDTOKEN is missing!");
-if (!CLIENT_ID) console.error("❌ BOTUSERID is missing!");
+if (!process.env.DISCORDTOKEN) {
+  console.error("❌ Missing DISCORDTOKEN in environment variables.");
+  process.exit(1);
+}
 
-// ===============================
-// Discord Client
-// ===============================
+// -------------------------------------
+// Discord Client Setup
+// -------------------------------------
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -26,12 +26,11 @@ const client = new Client({
   ]
 });
 
-// Store slash + prefix commands
 client.commands = new Collection();
 
-// ===============================
-// Load Commands
-// ===============================
+// -------------------------------------
+// Load Slash Commands
+// -------------------------------------
 console.log("📦 Loading commands...");
 
 const commandsPath = path.join(__dirname, 'commands');
@@ -39,36 +38,30 @@ const commandFolders = fs.readdirSync(commandsPath);
 
 for (const folder of commandFolders) {
   const folderPath = path.join(commandsPath, folder);
-  const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.js'));
+  const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
 
-  for (const file of files) {
+  for (const file of commandFiles) {
     const filePath = path.join(folderPath, file);
     const command = require(filePath);
 
-    // Register slash commands
     if (command.data && command.execute) {
       client.commands.set(command.data.name, command);
       console.log(`✔ Slash command loaded: ${command.data.name}`);
     }
-
-    // Register prefix commands
-    if (command.prefix && command.execute) {
-      client.commands.set(command.prefix, command);
-      console.log(`✔ Prefix command loaded: !${command.prefix}`);
-    }
   }
 }
 
-// ===============================
+// -------------------------------------
 // Load Events
-// ===============================
+// -------------------------------------
 console.log("🎧 Loading events...");
 
 const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'));
+const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
 for (const file of eventFiles) {
-  const event = require(path.join(eventsPath, file));
+  const filePath = path.join(eventsPath, file);
+  const event = require(filePath);
 
   if (event.once) {
     client.once(event.name, (...args) => event.execute(...args, client));
@@ -79,23 +72,23 @@ for (const file of eventFiles) {
   console.log(`✔ Event loaded: ${event.name}`);
 }
 
-// ===============================
-// Render Health Server
-// ===============================
-const app = express();
-const PORT = 10000;
-
-app.get('/', (req, res) => res.send('Bot is deployed and running.'));
-app.listen(PORT, () => console.log(`🌐 Health server running on port ${PORT}`));
-
-// ===============================
-// Login
-// ===============================
+// -------------------------------------
+// Login to Discord
+// -------------------------------------
 console.log("🔑 Logging into Discord...");
 
-client.login(DISCORD_TOKEN)
-  .then(() => console.log(`✅ Logged in as ${client.user.tag}`))
-  .catch(err => {
-    console.error("❌ Discord login failed!");
-    console.error(err);
-  });
+client.login(process.env.DISCORDTOKEN);
+
+// -------------------------------------
+// Health Server for Render
+// -------------------------------------
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get('/', (req, res) => {
+  res.send("Bot is running.");
+});
+
+app.listen(PORT, () => {
+  console.log(`🌐 Health server running on port ${PORT}`);
+});

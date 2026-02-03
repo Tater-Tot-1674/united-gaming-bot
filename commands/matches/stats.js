@@ -17,7 +17,7 @@ module.exports = {
       const games = (player.wins || 0) + (player.losses || 0);
       const winRate = games > 0 ? ((player.wins / games) * 100).toFixed(1) : 0;
 
-      await interaction.reply({
+      return interaction.reply({
         content:
           `📊 **Your Stats**\n` +
           `Games: ${games}\n` +
@@ -26,9 +26,10 @@ module.exports = {
           `Win Rate: ${winRate}%`,
         ephemeral: true
       });
+
     } catch (err) {
-      console.error(err);
-      await interaction.reply({ content: 'Error fetching stats.', ephemeral: true });
+      console.error('❌ Stats command error:', err);
+      return interaction.reply({ content: 'Error fetching stats.', ephemeral: true });
     }
   }
 };

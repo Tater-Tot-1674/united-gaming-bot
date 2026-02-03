@@ -1,46 +1,111 @@
-const { Client, GatewayIntentBits } = require('discord.js');
-const express = require('express');
+import os
+import discord
+from discord.ext import commands
+from discord import app_commands
+import importlib
+import pkgutil
+from flask import Flask
+import threading
 
-// Show token length so we know Render is reading it
-console.log("Token length:", process.env.DISCORDTOKEN?.length);
+# -------------------------------------
+# Load environment variables
+# -------------------------------------
+print("🔍 Checking environment variables...")
 
-// Force IPv4-friendly TLS behavior
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+TOKEN = os.getenv("DISCORDTOKEN")
+if not TOKEN:
+    print("❌ Missing DISCORDTOKEN in environment variables.")
+    raise SystemExit
 
-// Create client with forced single shard
-const client = new Client({
-  shards: 1,
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
-});
+# -------------------------------------
+# Discord Client Setup
+# -------------------------------------
+intents = discord.Intents.default()
+intents.guilds = True
+intents.messages = True
+intents.message_content = True
 
-// Debugging hooks to expose gateway behavior
-client.on('debug', msg => console.log("[DEBUG]", msg));
-client.on('warn', msg => console.log("[WARN]", msg));
-client.on('error', err => console.log("[CLIENT ERROR]", err));
-client.on('shardError', err => console.log("[SHARD ERROR]", err));
+bot = commands.Bot(
+    command_prefix="!",  # prefix commands still supported
+    intents=intents
+)
 
-// Ready event
-client.once('ready', () => {
-  console.log(`READY FIRED: Logged in as ${client.user.tag}`);
-});
+tree = bot.tree  # slash command tree
 
-// Attempt login
-console.log("Attempting login...");
-client.login(process.env.DISCORDTOKEN);
+# -------------------------------------
+# Auto‑Load Commands (Cogs)
+# Mirrors: /commands/<folder>/<file>.py
+# -------------------------------------
+print("📦 Loading commands...")
 
-// Render health server
-const app = express();
-const PORT = process.env.PORT || 10000;
+def load_commands():
+    for module in pkgutil.iter_modules(['commands']):
+        if module.ispkg:
+            folder = module.name
+            folder_path = f"commands/{folder}"
 
-app.get('/', (req, res) => res.send("Bot running"));
-app.listen(PORT, () => console.log("Health server on port", PORT));
+            for submodule in pkgutil.iter_modules([folder_path]):
+                full_path = f"commands.{folder}.{submodule.name}"
+                importlib.import_module(full_path)
+                print(f"✔ Loaded command module: {full_path}")
 
-// Keep-alive ping so Render doesn't freeze the process
-setInterval(() => {
-  console.log("keepalive");
-}, 1000 * 60 * 4); // every 4 minutes
+        else:
+            full_path = f"commands.{module.name}"
+            importlib.import_module(full_path)
+            print(f"✔ Loaded command module: {full_path}")
 
+# -------------------------------------
+# Auto‑Load Events
+# Mirrors: /events/<file>.py
+# -------------------------------------
+print("🎧 Loading events...")
+
+def load_events():
+    for module in pkgutil.iter_modules(['events']):
+        full_path = f"events.{module.name}"
+        imported = importlib.import_module(full_path)
+
+        if hasattr(imported, "setup"):
+            imported.setup(bot)
+            print(f"✔ Event loaded: {module.name}")
+
+# -------------------------------------
+# Bot Ready Event
+# -------------------------------------
+@bot.event
+async def on_ready():
+    print(f"🔓 Logged in as {bot.user}")
+
+    # Sync slash commands
+    try:
+        synced = await tree.sync()
+        print(f"🔧 Synced {len(synced)} slash commands")
+    except Exception as e:
+        print("❌ Slash command sync failed:", e)
+
+# -------------------------------------
+# Flask Keepalive Server (Render)
+# -------------------------------------
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot is running."
+
+def run_flask():
+    port = int(os.getenv("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+def start_keepalive():
+    thread = threading.Thread(target=run_flask)
+    thread.start()
+
+# -------------------------------------
+# Main Startup
+# -------------------------------------
+if __name__ == "__main__":
+    load_commands()
+    load_events()
+    start_keepalive()
+    print("🔑 Logging into Discord...")
+    bot.run(TOKEN)

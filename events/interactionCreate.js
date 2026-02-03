@@ -1,6 +1,7 @@
 // events/interactionCreate.js
 module.exports = {
   name: 'interactionCreate',
+
   async execute(interaction, client) {
     if (!interaction.isCommand()) return;
 
@@ -8,11 +9,21 @@ module.exports = {
     if (!command) return;
 
     try {
-      await command.execute(interaction);
+      await command.execute(interaction, client);
     } catch (error) {
-      console.error(error);
-      await interaction.reply({ content: '❌ There was an error executing this command.', ephemeral: true });
-    }
-  },
-};
+      console.error('❌ Command execution error:', error);
 
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: '❌ There was an error executing this command.',
+          ephemeral: true
+        });
+      } else {
+        await interaction.reply({
+          content: '❌ There was an error executing this command.',
+          ephemeral: true
+        });
+      }
+    }
+  }
+};

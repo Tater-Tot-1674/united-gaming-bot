@@ -1,64 +1,58 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { playerService } = require('../../services/playerService');
-const { syncToSite } = require('../../utils/syncToSite');
-const { WEBSITE_REPO, GITHUB_TOKEN } = require('../../utils/constants');
+from discord import app_commands
+from discord.ext import commands
+from services.player_service import player_service
+from utils.syncToSite import sync_to_site
+from utils.constants import WEBSITE_REPO, GITHUB_TOKEN
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('register')
-    .setDescription('Register as a new player in KartKings')
-    .addStringOption(option =>
-      option.setName('username')
-        .setDescription('Your in-game display name')
-        .setRequired(true)
+class Register(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @app_commands.command(name="register", description="Register as a new player in KartKings")
+    @app_commands.describe(
+        username="Your in‑game display name",
+        team="Choose your starting team"
     )
-    .addStringOption(option =>
-      option.setName('team')
-        .setDescription('Choose your starting team')
-        .setRequired(true)
-        .addChoices(
-          { name: 'Red', value: 'red' },
-          { name: 'Blue', value: 'blue' },
-          { name: 'Green', value: 'green' },
-          { name: 'Yellow', value: 'yellow' },
-          { name: 'Purple', value: 'purple' },
-          { name: 'Orange', value: 'orange' }
-        )
-    ),
+    @app_commands.choices(team=[
+        app_commands.Choice(name="Red", value="red"),
+        app_commands.Choice(name="Blue", value="blue"),
+        app_commands.Choice(name="Green", value="green"),
+        app_commands.Choice(name="Yellow", value="yellow"),
+        app_commands.Choice(name="Purple", value="purple"),
+        app_commands.Choice(name="Orange", value="orange")
+    ])
+    async def register(self, interaction, username: str, team: app_commands.Choice[str]):
 
-  async execute(interaction) {
-    const username = interaction.options.getString('username');
-    const team = interaction.options.getString('team');
+        try:
+            result = player_service.register_player(
+                interaction.user.id,
+                username,
+                team.value
+            )
 
-    try {
-      const result = await playerService.registerPlayer(interaction.user.id, username, team);
+            if result["success"]:
+                try:
+                    sync_to_site("players.json", WEBSITE_REPO, GITHUB_TOKEN)
+                except Exception as e:
+                    print(f"❌ syncToSite failed: {e}")
 
-      if (result.success) {
-        // Push updated players.json to website repo
-        try {
-          syncToSite('players.json', WEBSITE_REPO, GITHUB_TOKEN);
-        } catch (err) {
-          console.error('❌ syncToSite failed:', err);
-        }
+                return await interaction.response.send_message(
+                    f"🎉 Welcome **{username}**! You have joined the **{team.value}** team.",
+                    ephemeral=True
+                )
 
-        return interaction.reply({
-          content: `🎉 Welcome **${username}**! You have joined the **${team}** team.`,
-          ephemeral: true
-        });
-      }
+            return await interaction.response.send_message(
+                f"⚠️ {result['message']}",
+                ephemeral=True
+            )
 
-      return interaction.reply({
-        content: `⚠️ ${result.message}`,
-        ephemeral: true
-      });
+        except Exception as e:
+            print(f"❌ Error registering player: {e}")
+            return await interaction.response.send_message(
+                "❌ Something went wrong during registration.",
+                ephemeral=True
+            )
 
-    } catch (error) {
-      console.error('Error registering player:', error);
-      return interaction.reply({
-        content: '❌ Something went wrong during registration.',
-        ephemeral: true
-      });
-    }
-  }
-};
+async def setup(bot):
+    await bot.add_cog(Register(bot))
 

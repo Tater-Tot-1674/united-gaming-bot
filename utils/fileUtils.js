@@ -1,7 +1,11 @@
 const fs = require('fs');
 
 function readJSON(path) {
-  return JSON.parse(fs.readFileSync(path));
+  try {
+    return JSON.parse(fs.readFileSync(path, 'utf8'));
+  } catch {
+    return [];
+  }
 }
 
 function writeJSON(path, data) {

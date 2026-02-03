@@ -1,6 +1,13 @@
 // utils/constants.js
 const path = require('path');
 
+// Load environment variables
+const CLIENT_ID = process.env.BOTUSERID;          // Discord Application ID
+const DISCORD_TOKEN = process.env.DISCORDTOKEN;   // Discord Bot Token
+const WEBSITE_REPO = process.env.GITHUBREPO;      // GitHub repo URL
+const GITHUB_TOKEN = process.env.GITHUBTOKEN;     // GitHub PAT
+const RENDER_URL = process.env.RENDERSERVICEURL;  // Render service URL
+
 // Paths to JSON data
 const DATA_PATHS = {
   PLAYERS: 'data/players.json',
@@ -17,19 +24,24 @@ const LEADERBOARD_TYPES = {
   MONTHLY: 'monthly'
 };
 
-// Default Discord roles or IDs (example placeholders)
+// Default Discord roles or IDs (placeholder values)
 const DEFAULT_ROLES = {
   ADMIN: 'admin-role-id',
   MODERATOR: 'moderator-role-id'
 };
 
-// Any other static values
+// Other static settings
 const BOT_SETTINGS = {
   PREFIX: '!',
   MAX_PLAYERS: 100
 };
 
 module.exports = {
+  CLIENT_ID,
+  DISCORD_TOKEN,
+  WEBSITE_REPO,
+  GITHUB_TOKEN,
+  RENDER_URL,
   DATA_PATHS,
   LEADERBOARD_TYPES,
   DEFAULT_ROLES,

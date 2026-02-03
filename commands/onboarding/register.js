@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { playerService } = require('../../services/playerService');
+const { syncToSite } = require('../../utils/syncToSite');
+const { WEBSITE_REPO, GITHUB_TOKEN } = require('../../utils/constants');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -23,6 +25,7 @@ module.exports = {
           { name: 'Orange', value: 'orange' }
         )
     ),
+
   async execute(interaction) {
     const username = interaction.options.getString('username');
     const team = interaction.options.getString('team');
@@ -31,13 +34,31 @@ module.exports = {
       const result = await playerService.registerPlayer(interaction.user.id, username, team);
 
       if (result.success) {
-        await interaction.reply({ content: `🎉 Welcome **${username}**! You have joined the **${team}** team.`, ephemeral: true });
-      } else {
-        await interaction.reply({ content: `⚠️ ${result.message}`, ephemeral: true });
+        // Push updated players.json to website repo
+        try {
+          syncToSite('players.json', WEBSITE_REPO, GITHUB_TOKEN);
+        } catch (err) {
+          console.error('❌ syncToSite failed:', err);
+        }
+
+        return interaction.reply({
+          content: `🎉 Welcome **${username}**! You have joined the **${team}** team.`,
+          ephemeral: true
+        });
       }
+
+      return interaction.reply({
+        content: `⚠️ ${result.message}`,
+        ephemeral: true
+      });
+
     } catch (error) {
       console.error('Error registering player:', error);
-      await interaction.reply({ content: '❌ Something went wrong during registration.', ephemeral: true });
+      return interaction.reply({
+        content: '❌ Something went wrong during registration.',
+        ephemeral: true
+      });
     }
   }
 };
+

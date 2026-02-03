@@ -1,15 +1,21 @@
-import { SlashCommandBuilder } from 'discord.js';
+const { SlashCommandBuilder } = require('discord.js');
 
-export default {
+module.exports = {
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('Show all available commands and how to use them'),
 
   async execute(interaction) {
-    await interaction.reply({
-      content: "🆘 **Help Menu:**\n- `/register` → Create your profile\n- `/profile` → View your stats\n- `/signup` → Join a tournament\n- `/report` → Report a match\n- `/leaderboard` → View rankings\n- `/announce` → Admin announcements",
+    return interaction.reply({
+      content:
+        "🆘 **Help Menu:**\n" +
+        "- `/register` → Create your profile\n" +
+        "- `/profile` → View your stats\n" +
+        "- `/signup` → Join a tournament\n" +
+        "- `/report` → Report a match\n" +
+        "- `/leaderboard` → View rankings\n" +
+        "- `/announce` → Admin announcements",
       ephemeral: true
     });
   }
 };
-

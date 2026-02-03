@@ -4,6 +4,9 @@ const express = require('express');
 // Show token length so we know Render is reading it
 console.log("Token length:", process.env.DISCORDTOKEN?.length);
 
+// Force IPv4-friendly TLS behavior
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 // Create client with forced single shard
 const client = new Client({
   shards: 1,
@@ -35,4 +38,9 @@ const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => res.send("Bot running"));
 app.listen(PORT, () => console.log("Health server on port", PORT));
+
+// Keep-alive ping so Render doesn't freeze the process
+setInterval(() => {
+  console.log("keepalive");
+}, 1000 * 60 * 4); // every 4 minutes
 

@@ -1,59 +1,59 @@
-import { Client, Intents } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
+// events/messageCreate.js
+const fs = require('fs');
+const path = require('path');
 
-export default async function messageCreate(client) {
-  client.on('messageCreate', async (message) => {
-    // Ignore bots
+module.exports = {
+  name: 'messageCreate',
+
+  async execute(message, client) {
+    // Ignore bot messages
     if (message.author.bot) return;
 
-    // Prefix for commands
     const prefix = '!';
 
+    // Only handle prefix commands
     if (!message.content.startsWith(prefix)) return;
 
-    // Extract command and args
+    // Extract command name + args
     const [cmdName, ...args] = message.content
       .slice(prefix.length)
       .trim()
       .split(/\s+/);
 
-    // Dynamically load all commands from the commands folder
-    const commandsPath = path.join(process.cwd(), 'commands');
-    const commandFolders = fs.readdirSync(commandsPath);
+    const commandsPath = path.join(__dirname, '../commands');
+    const folders = fs.readdirSync(commandsPath);
 
-    let commandFound = false;
-
-    for (const folder of commandFolders) {
+    for (const folder of folders) {
       const folderPath = path.join(commandsPath, folder);
       if (!fs.statSync(folderPath).isDirectory()) continue;
 
-      const commandFiles = fs
-        .readdirSync(folderPath)
-        .filter((file) => file.endsWith('.js'));
+      const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.js'));
 
-      for (const file of commandFiles) {
+      for (const file of files) {
         const filePath = path.join(folderPath, file);
-        const command = await import(`file://${filePath}`);
 
-        if (command.default.name === cmdName.toLowerCase()) {
+        let command;
+        try {
+          command = require(filePath);
+        } catch (err) {
+          console.error(`❌ Failed to load prefix command file: ${file}`, err);
+          continue;
+        }
+
+        // Only run commands that explicitly support prefix mode
+        if (command.prefix && command.prefix.toLowerCase() === cmdName.toLowerCase()) {
           try {
-            await command.default.execute(message, args, client);
-          } catch (error) {
-            console.error(error);
+            await command.execute(message, args, client);
+          } catch (err) {
+            console.error('❌ Prefix command execution error:', err);
             message.reply('There was an error executing that command.');
           }
-          commandFound = true;
-          break;
+          return;
         }
       }
-
-      if (commandFound) break;
     }
 
-    if (!commandFound) {
-      message.reply(`Unknown command. Use ${prefix}help to see available commands.`);
-    }
-  });
-}
-
+    // If no prefix command matched
+    message.reply(`Unknown command. Use ${prefix}help to see available commands.`);
+  }
+};

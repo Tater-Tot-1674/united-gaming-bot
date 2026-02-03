@@ -4,6 +4,7 @@ const express = require('express');
 console.log("Token length:", process.env.DISCORDTOKEN?.length);
 
 const client = new Client({
+  shards: 1,   // 🔥 Force single-shard mode (important for Render)
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
@@ -32,4 +33,3 @@ const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => res.send("Bot running"));
 app.listen(PORT, () => console.log("Health server on port", PORT));
-

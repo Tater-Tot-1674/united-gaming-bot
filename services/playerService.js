@@ -1,16 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 const { syncToSite } = require('../utils/syncToSite');
+const { DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN } = require('../utils/constants');
 
-const playersPath = path.join(__dirname, '../data/players.json');
+const playersPath = path.join(__dirname, '../', DATA_PATHS.PLAYERS);
 
 function loadPlayers() {
-  return JSON.parse(fs.readFileSync(playersPath));
+  try {
+    return JSON.parse(fs.readFileSync(playersPath, 'utf8'));
+  } catch {
+    return [];
+  }
 }
 
 function savePlayers(players) {
   fs.writeFileSync(playersPath, JSON.stringify(players, null, 2));
-  syncToSite('players.json'); // 🌍 live site update
+  syncToSite('players.json', WEBSITE_REPO, GITHUB_TOKEN);
 }
 
 exports.playerService = {
@@ -70,3 +75,4 @@ exports.playerService = {
     savePlayers(players);
   }
 };
+

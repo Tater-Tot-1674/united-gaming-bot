@@ -1,13 +1,16 @@
 {
   "name": "kartkings-bot",
   "version": "1.0.0",
+  "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "axios": "^1.6.7"
   }
 }

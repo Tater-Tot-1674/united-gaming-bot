@@ -25,9 +25,6 @@ function updateProfiles(data) {
   });
 }
 
-// Initial load
 fetchProfiles();
-// Poll every 5s
 setInterval(fetchProfiles, 5000);
-
 

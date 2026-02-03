@@ -11,7 +11,7 @@ async function fetchLeaderboard() {
 }
 
 function updateLeaderboard(data) {
-  leaderboardContainer.innerHTML = ''; // clear old
+  leaderboardContainer.innerHTML = '';
   data.forEach(player => {
     const div = document.createElement('div');
     div.className = 'player-row';
@@ -24,8 +24,5 @@ function updateLeaderboard(data) {
   });
 }
 
-// Initial load
 fetchLeaderboard();
-
-// Poll every 5s
 setInterval(fetchLeaderboard, 5000);

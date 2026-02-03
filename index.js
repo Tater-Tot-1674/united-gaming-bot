@@ -1,50 +1,120 @@
+// ===============================
+// Imports
+// ===============================
 const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-
+// ===============================
+// Environment Variables
+// ===============================
 const DISCORDTOKEN = process.env.DISCORDTOKEN;
 const CLIENT_ID = process.env.BOTUSERID;
 
-// Start a dummy server for Render
-const app = express();
-const PORT = 10000;
-app.get('/', (req, res) => res.send('Bot is deployed!'));
-app.listen(PORT, () => console.log(`🌐 Health server listening on port ${PORT}`));
+// ===============================
+// Basic Validation
+// ===============================
+console.log("🔍 Checking environment variables...");
 
-// Load slash commands from ./commands folder
-const commands = [];
-const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  commands.push(command.data.toJSON());
+if (!DISCORDTOKEN) {
+  console.error("❌ DISCORDTOKEN is missing! Add it in Render → Environment.");
 }
 
-// Log the bot in
-console.log('🔑 Starting Discord bot...');
+if (!CLIENT_ID) {
+  console.error("❌ BOTUSERID (Application ID) is missing! Add it in Render → Environment.");
+}
+
+// ===============================
+// Discord Client
+// ===============================
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
+
+// ===============================
+// Render Health Server
+// ===============================
+const app = express();
+const PORT = 10000;
+
+app.get('/', (req, res) => res.send('Bot is deployed and running.'));
+app.listen(PORT, () => console.log(`🌐 Health server running on port ${PORT}`));
+
+// ===============================
+// Load Slash Commands (Optional)
+// ===============================
+let commands = [];
+
+try {
+  const commandsDir = path.join(__dirname, 'commands');
+
+  function loadCommands(dir) {
+    const files = fs.readdirSync(dir);
+
+    for (const file of files) {
+      const fullPath = path.join(dir, file);
+      const stat = fs.statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        loadCommands(fullPath);
+      } else if (file.endsWith('.js')) {
+        const cmd = require(fullPath);
+
+        if (cmd.data) {
+          commands.push(cmd.data.toJSON());
+          console.log(`📦 Loaded slash command: ${cmd.data.name}`);
+        } else {
+          console.log(`⚠ Skipped non-slash command file: ${file}`);
+        }
+      }
+    }
+  }
+
+  loadCommands(commandsDir);
+} catch (err) {
+  console.error("⚠ Command loading error:", err);
+}
+
+// ===============================
+// Login to Discord
+// ===============================
+console.log("🔑 Attempting to log in to Discord...");
+
 client.login(DISCORDTOKEN)
-  .then(() => console.log(`✅ Bot logged in as ${client.user.tag}`))
-  .catch(err => console.error('❌ Failed to log in:', err));
+  .then(() => {
+    console.log(`✅ Logged in as ${client.user.tag}`);
+  })
+  .catch(err => {
+    console.error("❌ Discord login failed!");
+    console.error(err);
+  });
 
-// Deploy commands after login
+// ===============================
+// Ready Event
+// ===============================
 client.once('ready', async () => {
-  console.log('🚀 Ready! Bot is online.');
+  console.log("🚀 Bot is online and ready.");
 
-  try {
-    const rest = new REST({ version: '10' }).setToken(DISCORDTOKEN);
+  // Deploy slash commands if any exist
+  if (commands.length > 0) {
+    try {
+      console.log("📡 Deploying slash commands...");
 
-    console.log('📡 Deploying global slash commands...');
-    await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
-      { body: commands }
-    );
+      const rest = new REST({ version: '10' }).setToken(DISCORDTOKEN);
 
-    console.log('🌍 Global slash commands deployed!');
-  } catch (err) {
-    console.error('❌ Failed to deploy commands:', err);
+      await rest.put(
+        Routes.applicationCommands(CLIENT_ID),
+        { body: commands }
+      );
+
+      console.log("🌍 Slash commands deployed globally.");
+    } catch (err) {
+      console.error("❌ Failed to deploy slash commands:");
+      console.error(err);
+    }
+  } else {
+    console.log("ℹ No slash commands found. Skipping deployment.");
   }
 });
+

@@ -1,6 +1,7 @@
 import os
 import importlib
 import discord
+import traceback
 from utils.constants import BOT_SETTINGS
 
 def setup(bot):
@@ -10,7 +11,7 @@ def setup(bot):
         if message.author.bot:
             return
 
-        prefix = BOT_SETTINGS["PREFIX"]
+        prefix = BOT_SETTINGS.get("PREFIX", "!")
 
         if not message.content.startswith(prefix):
             return
@@ -40,7 +41,8 @@ def setup(bot):
                 try:
                     module = importlib.import_module(module_path)
                 except Exception as e:
-                    print(f"❌ Failed to load prefix command file {file}: {e}")
+                    print(f"❌ Failed to import {module_path}: {e}")
+                    traceback.print_exc()
                     continue
 
                 # Only run commands that explicitly support prefix mode
@@ -49,6 +51,7 @@ def setup(bot):
                         await module.execute(message, args, bot)
                     except Exception as e:
                         print(f"❌ Prefix command execution error: {e}")
+                        traceback.print_exc()
                         await message.reply("There was an error executing that command.")
                     return
 

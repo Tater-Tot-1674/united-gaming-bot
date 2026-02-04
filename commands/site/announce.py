@@ -6,6 +6,8 @@ from utils.syncToSite import sync_to_site
 
 ANNOUNCEMENTS_PATH = DATA_PATHS["ANNOUNCEMENTS"]
 
+GUILD_ID = 1335339358932304055
+
 class Announce(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

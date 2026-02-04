@@ -1,11 +1,15 @@
 import discord
+from bot import start_keepalive   # import the keepalive starter
 
-GUILD_ID = 1335339358932304055  # your server ID
+GUILD_ID = 1335339358932304055
 
 def setup(bot):
     @bot.event
     async def on_ready():
         print(f"🤖 Bot is fully online as {bot.user}")
+
+        # Start keepalive AFTER bot is ready
+        start_keepalive()
 
         # Instant guild‑only slash command sync
         try:
@@ -26,3 +30,4 @@ def setup(bot):
             print(f"❌ Failed to set presence: {e}")
 
         print("✅ Bot is ready to roll.")
+

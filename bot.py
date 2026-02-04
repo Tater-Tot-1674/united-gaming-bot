@@ -5,7 +5,6 @@ import importlib
 import pkgutil
 from flask import Flask
 from threading import Thread
-import asyncio
 import traceback
 
 # ====================================================
@@ -18,17 +17,17 @@ def home():
     return "OK"
 
 def run_web():
+    print("🌐 Flask keep-alive started on port 10000")
     app.run(host="0.0.0.0", port=10000)
 
-Thread(target=run_web, daemon=True).start()
-print("🌐 Flask keep-alive started on port 10000")
+Thread(target=run_web).start()
 
 # ====================================================
 #  DISCORD BOT SETUP
 # ====================================================
 TOKEN = os.getenv("DISCORDTOKEN")
 if not TOKEN:
-    print("❌ Missing DISCORDTOKEN")
+    print("❌ Missing DISCORDTOKEN environment variable")
     raise SystemExit
 
 intents = discord.Intents.default()
@@ -39,62 +38,61 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
-GUILD_ID = 1335339358932304055  # Change as needed
-
 # ====================================================
-#  COMMAND LOADER (async Cogs)
+#  COMMAND LOADING
 # ====================================================
-async def load_commands():
+def load_commands():
     print("📦 Loading commands...")
     if not os.path.isdir("commands"):
         print("❌ 'commands' folder missing")
         return
 
-    for module in pkgutil.iter_modules(["commands"]):
+    for module in pkgutil.iter_modules(['commands']):
         try:
-            full_path = f"commands.{module.name}"
-            imported = importlib.import_module(full_path)
-            print(f"✅ Imported package: {full_path}")
+            if module.ispkg:
+                folder = module.name
+                folder_path = f"commands/{folder}"
 
-            if hasattr(imported, "setup"):
-                if asyncio.iscoroutinefunction(imported.setup):
-                    await imported.setup(bot)
-                else:
-                    imported.setup(bot)
-                print(f"🟢 Cog setup executed: {module.name}")
+                for submodule in pkgutil.iter_modules([folder_path]):
+                    full_path = f"commands.{folder}.{submodule.name}"
+                    imported = importlib.import_module(full_path)
+                    print(f"✅ Imported command: {full_path}")
+                    if hasattr(imported, "setup"):
+                        print(f"🟢 Running setup() for {full_path}")
+                        bot.loop.create_task(imported.setup(bot))
             else:
-                print(f"⚠️ No setup() in {module.name}, skipping Cog registration.")
+                full_path = f"commands.{module.name}"
+                imported = importlib.import_module(full_path)
+                print(f"✅ Imported command: {full_path}")
+                if hasattr(imported, "setup"):
+                    print(f"🟢 Running setup() for {full_path}")
+                    bot.loop.create_task(imported.setup(bot))
 
         except Exception as e:
-            print(f"❌ Error loading command '{module.name}': {e}")
+            print(f"❌ Error importing command '{module.name}': {e}")
             traceback.print_exc()
 
 # ====================================================
-#  EVENT LOADER
+#  EVENT LOADING
 # ====================================================
-async def load_events():
+def load_events():
     print("📦 Loading events...")
     if not os.path.isdir("events"):
         print("❌ 'events' folder missing")
         return
 
-    for module in pkgutil.iter_modules(["events"]):
+    for module in pkgutil.iter_modules(['events']):
         try:
             full_path = f"events.{module.name}"
             imported = importlib.import_module(full_path)
             print(f"✅ Imported event: {full_path}")
-
             if hasattr(imported, "setup"):
-                if asyncio.iscoroutinefunction(imported.setup):
-                    await imported.setup(bot)
-                else:
-                    imported.setup(bot)
-                print(f"🟢 Event setup executed: {module.name}")
+                print(f"🟢 Running setup() for event {full_path}")
+                imported.setup(bot)
             else:
                 print(f"⚠️ Event '{module.name}' missing setup()")
-
         except Exception as e:
-            print(f"❌ Error loading event '{module.name}': {e}")
+            print(f"❌ Error importing event '{module.name}': {e}")
             traceback.print_exc()
 
 # ====================================================
@@ -102,53 +100,54 @@ async def load_events():
 # ====================================================
 @bot.event
 async def on_ready():
-    print("="*60)
+    print("============================================================")
     print("🟢 on_ready() fired — BOT ONLINE")
     print(f"🤖 Logged in as {bot.user} (ID: {bot.user.id})")
 
     # Presence
     try:
         await bot.change_presence(
-            activity=discord.Game(name="KartKings | /help"),
+            activity=discord.Game(name="Your Bot | /help"),
             status=discord.Status.online
         )
         print("🟩 Presence set successfully.")
     except Exception as e:
-        print(f"❌ Error setting presence: {e}")
+        print(f"❌ Failed to set presence: {e}")
         traceback.print_exc()
 
-    # Sync guild commands
+    # Log commands before sync
+    print("------------------------------------------------------------")
+    print("📋 Commands BEFORE sync:")
+    for cmd in bot.tree.get_commands():
+        print(f"  • {cmd.name} (type={cmd.type})")
+    if not bot.tree.get_commands():
+        print("⚠️ No commands registered BEFORE sync.")
+
+    # Sync commands
+    print("------------------------------------------------------------")
+    print("🔧 Syncing commands...")
     try:
-        guild = discord.Object(id=GUILD_ID)
-        synced = await tree.sync(guild=guild)
-        print(f"🟩 Synced {len(synced)} slash commands to guild {GUILD_ID}")
-        if not synced:
-            print("⚠️ WARNING: No slash commands were synced!")
+        synced = await bot.tree.sync()
+        print(f"🟩 Synced {len(synced)} slash commands globally.")
         for cmd in synced:
-            print(f"   • {cmd.name} (type={cmd.type})")
+            print(f"  • {cmd.name} (type={cmd.type})")
+        if len(synced) == 0:
+            print("⚠️ WARNING: No commands registered after sync.")
     except Exception as e:
-        print(f"❌ Error during guild command sync: {e}")
+        print(f"❌ Exception during sync: {e}")
         traceback.print_exc()
 
-    print("="*60)
+    print("============================================================")
     print("✅ Bot ready completed successfully.")
-    print("="*60)
+    print("============================================================")
 
 # ====================================================
 #  STARTUP
 # ====================================================
-async def main():
-    try:
-        await load_commands()
-        await load_events()
-        print("🟩 All commands/events attempted to load.")
-        await bot.start(TOKEN)
-    except Exception as e:
-        print(f"❌ Fatal error starting bot: {e}")
-        traceback.print_exc()
-
 if __name__ == "__main__":
     print("🟦 Starting bot...")
-    asyncio.run(main())
+    load_commands()
+    load_events()
+    bot.run(TOKEN)
 
 

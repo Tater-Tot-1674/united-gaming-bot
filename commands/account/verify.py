@@ -1,18 +1,22 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
 from utils.syncToSite import sync_to_site
 
 PLAYERS_PATH = DATA_PATHS["PLAYERS"]
-
 GUILD_ID = 1335339358932304055
 
 class Verify(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="verify", description="Verify your account")
+    @app_commands.command(
+        name="verify",
+        description="Verify your account",
+        guild=discord.Object(id=GUILD_ID)
+    )
     @app_commands.describe(code="Your verification code")
     async def verify(self, interaction, code: str):
         user_id = interaction.user.id
@@ -76,4 +80,3 @@ class Verify(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Verify(bot))
-

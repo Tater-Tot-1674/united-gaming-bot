@@ -16,6 +16,7 @@ RENDER_URL = os.getenv("RENDERSERVICEURL")    # Render service URL
 
 DATA_PATHS = {
     "PLAYERS": "data/players.json",
+    "MATCHES": "data/matches.json",
     "TOURNAMENTS": "data/tournaments.json",
     "ANNOUNCEMENTS": "data/announcements.json",
     "BRACKET": "data/bracket.json",

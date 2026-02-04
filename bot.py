@@ -5,6 +5,10 @@ import importlib
 import pkgutil
 from flask import Flask
 import threading
+import http.server
+import socketserver
+import threading
+import os
 
 # -------------------------------------
 # Load environment variables
@@ -66,22 +70,19 @@ def load_events():
             imported.setup(bot)
             print(f"✔ Event loaded: {module.name}")
 
-# -------------------------------------
-# Flask Keepalive Server (Render)
-# -------------------------------------
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Bot is running."
-
-def run_flask():
+def start_dummy_server():
     port = int(os.getenv("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
 
-def start_keepalive():
-    thread = threading.Thread(target=run_flask, daemon=True)
+    handler = http.server.SimpleHTTPRequestHandler
+
+    def run():
+        with socketserver.TCPServer(("", port), handler) as httpd:
+            print(f"🌐 Dummy server running on port {port}")
+            httpd.serve_forever()
+
+    thread = threading.Thread(target=run, daemon=True)
     thread.start()
+
 
 # -------------------------------------
 # Main Startup

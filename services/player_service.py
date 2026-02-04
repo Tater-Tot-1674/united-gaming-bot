@@ -1,52 +1,68 @@
 import json
-import time
-from datetime import datetime
 from utils.syncToSite import sync_to_site
+from utils.bracketGen import generate_bracket
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
 
-MATCHES_PATH = DATA_PATHS["MATCHES"]
+TOURNAMENTS_PATH = DATA_PATHS["TOURNAMENTS"]
+BRACKET_PATH = DATA_PATHS["BRACKET"]
 
 
-def load_matches():
+def load_tournaments():
     try:
-        with open(MATCHES_PATH, "r", encoding="utf8") as f:
+        with open(TOURNAMENTS_PATH, "r", encoding="utf8") as f:
             return json.load(f)
     except FileNotFoundError:
         return []
     except json.JSONDecodeError as e:
-        print(f"❌ JSON error in matches file: {e}")
+        print(f"❌ JSON error in tournaments file: {e}")
         return []
 
 
-def save_matches(matches):
-    with open(MATCHES_PATH, "w", encoding="utf8") as f:
-        json.dump(matches, f, indent=2)
+def save_tournaments(tournaments):
+    with open(TOURNAMENTS_PATH, "w", encoding="utf8") as f:
+        json.dump(tournaments, f, indent=2)
 
-    sync_to_site("matches.json", WEBSITE_REPO, GITHUB_TOKEN)
-
-
-class MatchService:
-    def report_match(self, winner_discord_id: str, loser_discord_id: str):
-        matches = load_matches()
-
-        match = {
-            "id": str(int(time.time() * 1000)),
-            "winner": winner_discord_id,
-            "loser": loser_discord_id,
-            "date": datetime.utcnow().isoformat()
-        }
-
-        matches.append(match)
-        save_matches(matches)
-
-        # Update stats safely
-        player_service.update_stats(winner_discord_id, loser_discord_id)
-
-        return match
-
-    def get_all_matches(self):
-        return load_matches()
+    sync_to_site("tournaments.json", WEBSITE_REPO, GITHUB_TOKEN)
 
 
-match_service = MatchService()
+class TournamentService:
+    def signup(self, tournament_id: str, user_id: str):
+        tournaments = load_tournaments()
+        tournament = next((t for t in tournaments if t.get("id") == tournament_id), None)
+
+        if not tournament:
+            return {"success": False, "message": "Tournament not found."}
+
+        tournament.setdefault("participants", [])
+
+        if user_id in tournament["participants"]:
+            return {"success": False, "message": "Already signed up."}
+
+        tournament["participants"].append(user_id)
+        save_tournaments(tournaments)
+
+        return {"success": True, "name": tournament.get("name")}
+
+    def generate_bracket(self, tournament_id: str):
+        tournaments = load_tournaments()
+        tournament = next((t for t in tournaments if t.get("id") == tournament_id), None)
+
+        if not tournament:
+            return None
+
+        bracket = generate_bracket(tournament.get("participants", []))
+
+        with open(BRACKET_PATH, "w", encoding="utf8") as f:
+            json.dump(bracket, f, indent=2)
+
+        sync_to_site("bracket.json", WEBSITE_REPO, GITHUB_TOKEN)
+
+        return tournament.get("name")
+
+    def get_tournament(self, tournament_id: str):
+        tournaments = load_tournaments()
+        return next((t for t in tournaments if t.get("id") == tournament_id), None)
+
+
+tournament_service = TournamentService()
 

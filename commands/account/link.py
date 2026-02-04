@@ -1,18 +1,22 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
 from utils.syncToSite import sync_to_site
 
 PLAYERS_PATH = DATA_PATHS["PLAYERS"]
-
 GUILD_ID = 1335339358932304055
 
 class Link(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="link", description="Link your Discord account to a player")
+    @app_commands.command(
+        name="link",
+        description="Link your Discord account to a player",
+        guild=discord.Object(id=GUILD_ID)
+    )
     @app_commands.describe(player_tag="Your in‑game player tag")
     async def link(self, interaction, player_tag: str):
         discord_id = interaction.user.id
@@ -69,4 +73,5 @@ class Link(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Link(bot))
+
 

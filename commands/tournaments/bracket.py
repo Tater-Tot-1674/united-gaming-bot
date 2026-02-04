@@ -8,6 +8,8 @@ from utils.syncToSite import sync_to_site
 TOURNAMENTS_PATH = DATA_PATHS["TOURNAMENTS"]
 BRACKET_PATH = DATA_PATHS["BRACKET"]
 
+GUILD_ID = 1335339358932304055
+
 class Bracket(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

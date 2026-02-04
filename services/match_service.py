@@ -16,7 +16,7 @@ def load_matches():
 def save_matches(matches):
     with open(matches_path, "w", encoding="utf8") as f:
         json.dump(matches, f, indent=2)
-    sync_to_site("tournaments.json", WEBSITE_REPO, GITHUB_TOKEN)
+    sync_to_site("matches.json", WEBSITE_REPO, GITHUB_TOKEN)
 
 class MatchService:
     def report_match(self, winner_discord_id, loser_discord_id):

@@ -14,26 +14,29 @@ class Link(commands.Cog):
 
     @app_commands.command(
         name="link",
-        description="Link your Discord account to a player",
-        guild=discord.Object(id=GUILD_ID)
+        description="Link your Discord account to a player"
     )
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     @app_commands.describe(player_tag="Your in‑game player tag")
-    async def link(self, interaction, player_tag: str):
+    async def link(self, interaction: discord.Interaction, player_tag: str):
         discord_id = interaction.user.id
+        print(f"🔹 /link called by {interaction.user} ({discord_id}) with tag: {player_tag}")
 
         # Load players
         try:
             with open(PLAYERS_PATH, "r", encoding="utf8") as f:
                 players = json.load(f)
+            print(f"✅ Loaded players.json successfully")
         except Exception as e:
             print(f"❌ Failed to read players.json: {e}")
             return await interaction.response.send_message(
-                "There was an error reading player data.",
+                "⚠️ There was an error reading player data.",
                 ephemeral=True
             )
 
-        # Already linked?
+        # Check if already linked
         if any(p.get("discordId") == discord_id for p in players):
+            print(f"⚠️ User {discord_id} already linked")
             return await interaction.response.send_message(
                 "Your account is already linked!",
                 ephemeral=True
@@ -42,6 +45,7 @@ class Link(commands.Cog):
         # Find player by tag
         player = next((p for p in players if p.get("username") == player_tag), None)
         if not player:
+            print(f"⚠️ Player tag '{player_tag}' not found")
             return await interaction.response.send_message(
                 "Player not found.",
                 ephemeral=True
@@ -53,25 +57,28 @@ class Link(commands.Cog):
         try:
             with open(PLAYERS_PATH, "w", encoding="utf8") as f:
                 json.dump(players, f, indent=2)
+            print(f"✅ Linked {discord_id} to player {player_tag}")
         except Exception as e:
             print(f"❌ Failed to write players.json: {e}")
             return await interaction.response.send_message(
-                "There was an error saving your link.",
+                "⚠️ There was an error saving your link.",
                 ephemeral=True
             )
 
         # Sync to GitHub
         try:
             sync_to_site("players.json", WEBSITE_REPO, GITHUB_TOKEN)
+            print(f"✅ players.json synced to GitHub successfully")
         except Exception as e:
             print(f"❌ syncToSite failed: {e}")
 
         return await interaction.response.send_message(
-            f"Successfully linked to **{player['username']}**!",
+            f"✅ Successfully linked to **{player['username']}**!",
             ephemeral=True
         )
 
 async def setup(bot):
     await bot.add_cog(Link(bot))
+
 
 

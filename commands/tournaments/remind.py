@@ -1,4 +1,5 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS
@@ -13,12 +14,12 @@ class Remind(commands.Cog):
 
     @app_commands.command(
         name="remind",
-        description="Remind participants of a tournament"
+        description="Remind participants of a tournament",
+        guild=discord.Object(id=GUILD_ID)
     )
     @app_commands.describe(tournament_id="The ID of the tournament")
     async def remind(self, interaction, tournament_id: str):
 
-        # Load tournaments
         try:
             with open(TOURNAMENTS_PATH, "r", encoding="utf8") as f:
                 tournaments = json.load(f)
@@ -46,4 +47,5 @@ class Remind(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Remind(bot))
+
 

@@ -5,6 +5,8 @@ from utils.constants import DATA_PATHS
 
 PLAYERS_PATH = DATA_PATHS["PLAYERS"]
 
+GUILD_ID = 1335339358932304055
+
 class Rival(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

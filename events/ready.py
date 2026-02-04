@@ -1,14 +1,14 @@
 import discord
 import traceback
 
-# Set your guild ID here for testing slash commands
-GUILD_ID = 1335339358932304055  # Replace with your server ID
+# Replace with your testing guild
+GUILD_ID = 1335339358932304055
 
 def setup(bot):
     @bot.event
     async def on_ready():
-        print("====================================================", flush=True)
-        print("🟢 on_ready() — BOT IS ONLINE", flush=True)
+        print("="*60, flush=True)
+        print("🟢 on_ready() fired — BOT ONLINE", flush=True)
         print(f"🤖 Logged in as {bot.user} (ID: {bot.user.id})", flush=True)
 
         # Presence
@@ -28,16 +28,24 @@ def setup(bot):
             synced = await bot.tree.sync(guild=guild)
             print(f"🟩 Synced {len(synced)} slash commands to guild {GUILD_ID}", flush=True)
             if len(synced) == 0:
-                print("⚠️ No commands registered. Check commands folder or decorators.", flush=True)
+                print("⚠️ WARNING: Sync returned zero commands.", flush=True)
         except Exception as e:
             print("❌ Error syncing commands:", repr(e), flush=True)
             traceback.print_exc()
 
-        # List loaded commands
-        print("📋 Registered slash commands:", flush=True)
-        for cmd in bot.tree.get_commands():
-            print(f"   • {cmd.name} (type={cmd.type})", flush=True)
+        # List registered slash commands
+        print("📋 Registered slash commands after sync:", flush=True)
+        try:
+            cmds = bot.tree.get_commands()
+            if not cmds:
+                print("⚠️ No commands registered.", flush=True)
+            for cmd in cmds:
+                print(f"   • {cmd.name} (type={cmd.type})", flush=True)
+        except Exception as e:
+            print("❌ Error listing commands:", repr(e), flush=True)
+            traceback.print_exc()
 
-        print("====================================================", flush=True)
-
+        print("="*60, flush=True)
+        print("✅ Bot ready completed successfully.", flush=True)
+        print("="*60, flush=True)
 

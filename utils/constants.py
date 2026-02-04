@@ -1,18 +1,10 @@
 import os
 
-# -------------------------------------
-# Environment Variables
-# -------------------------------------
-
-CLIENT_ID = os.getenv("BOTUSERID")            # Discord Application ID
-DISCORD_TOKEN = os.getenv("DISCORDTOKEN")     # Discord Bot Token
-WEBSITE_REPO = os.getenv("GITHUBREPO")        # GitHub repo URL
-GITHUB_TOKEN = os.getenv("GITHUBTOKEN")       # GitHub Personal Access Token
-RENDER_URL = os.getenv("RENDERSERVICEURL")    # Render service URL
-
-# -------------------------------------
-# Paths to JSON Data
-# -------------------------------------
+CLIENT_ID = os.getenv("BOTUSERID")
+DISCORD_TOKEN = os.getenv("DISCORDTOKEN")
+WEBSITE_REPO = os.getenv("GITHUBREPO")
+GITHUB_TOKEN = os.getenv("GITHUBTOKEN")
+RENDER_URL = os.getenv("RENDERSERVICEURL")
 
 DATA_PATHS = {
     "PLAYERS": "data/players.json",
@@ -24,29 +16,8 @@ DATA_PATHS = {
     "LEADERBOARD_MONTHLY": "data/leaderboardmonthly.json"
 }
 
-# -------------------------------------
-# Leaderboard Types
-# -------------------------------------
+LEADERBOARD_TYPES = {"WEEKLY": "weekly", "MONTHLY": "monthly"}
 
-LEADERBOARD_TYPES = {
-    "WEEKLY": "weekly",
-    "MONTHLY": "monthly"
-}
+DEFAULT_ROLES = {"ADMIN": "admin-role-id", "MODERATOR": "moderator-role-id"}
 
-# -------------------------------------
-# Default Discord Roles or IDs
-# -------------------------------------
-
-DEFAULT_ROLES = {
-    "ADMIN": "admin-role-id",
-    "MODERATOR": "moderator-role-id"
-}
-
-# -------------------------------------
-# Other Static Settings
-# -------------------------------------
-
-BOT_SETTINGS = {
-    "PREFIX": "!",
-    "MAX_PLAYERS": 100
-}
+BOT_SETTINGS = {"PREFIX": "!", "MAX_PLAYERS": 100}

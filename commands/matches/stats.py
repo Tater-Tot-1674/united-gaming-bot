@@ -2,6 +2,8 @@ from discord import app_commands
 from discord.ext import commands
 from services.player_service import player_service
 
+GUILD_ID = 1335339358932304055
+
 class Stats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

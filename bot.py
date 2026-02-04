@@ -17,6 +17,8 @@ if not TOKEN:
     print("❌ Missing DISCORDTOKEN in environment variables.")
     raise SystemExit
 
+GUILD_ID = 123456789012345678  # <-- your server ID here
+
 # -------------------------------------
 # Discord Client Setup
 # -------------------------------------
@@ -26,15 +28,14 @@ intents.messages = True
 intents.message_content = True
 
 bot = commands.Bot(
-    command_prefix="!",  # prefix commands still supported
+    command_prefix="!",
     intents=intents
 )
 
-tree = bot.tree  # slash command tree
+tree = bot.tree
 
 # -------------------------------------
 # Auto‑Load Commands (Cogs)
-# Mirrors: /commands/<folder>/<file>.py
 # -------------------------------------
 print("📦 Loading commands...")
 
@@ -56,7 +57,6 @@ def load_commands():
 
 # -------------------------------------
 # Auto‑Load Events
-# Mirrors: /events/<file>.py
 # -------------------------------------
 print("🎧 Loading events...")
 
@@ -76,10 +76,12 @@ def load_events():
 async def on_ready():
     print(f"🔓 Logged in as {bot.user}")
 
-    # Sync slash commands
+    # Sync slash commands instantly to your server
     try:
-        synced = await tree.sync()
-        print(f"🔧 Synced {len(synced)} slash commands")
+        guild = discord.Object(id=GUILD_ID)
+        synced = await tree.sync(guild=guild)
+        print(f"⚡ Synced {len(synced)} slash commands to guild {GUILD_ID}")
+        print("🚀 Commands deployed instantly!")
     except Exception as e:
         print("❌ Slash command sync failed:", e)
 

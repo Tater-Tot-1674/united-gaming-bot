@@ -1,10 +1,11 @@
+# /events/ready.py
 import discord
 import traceback
 
 # Replace with your testing guild
 GUILD_ID = 1335339358932304055
 
-def setup(bot):
+def setup(bot: discord.Bot):
     @bot.event
     async def on_ready():
         print("="*60, flush=True)
@@ -48,4 +49,3 @@ def setup(bot):
         print("="*60, flush=True)
         print("✅ Bot ready completed successfully.", flush=True)
         print("="*60, flush=True)
-

@@ -1,6 +1,5 @@
 import discord
 import traceback
-from bot import start_keepalive   # import the keepalive starter
 
 GUILD_ID = 1335339358932304055
 

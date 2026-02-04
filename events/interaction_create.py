@@ -1,22 +1,23 @@
-# /events/interaction_create.py
 import discord
 import traceback
+from discord.ext import commands
 
-def setup(bot: discord.Bot):
+def setup(bot: commands.Bot):
+
     @bot.event
     async def on_interaction(interaction: discord.Interaction):
-        # Only handle slash commands
+
+        # Only care about slash commands
         if interaction.type != discord.InteractionType.application_command:
             return
 
         try:
-            # Let discord.py handle the command normally
             await bot.process_application_commands(interaction)
+
         except Exception as e:
             print(f"❌ Slash command error: {e}")
             traceback.print_exc()
 
-            # Respond safely
             try:
                 if interaction.response.is_done():
                     await interaction.followup.send(

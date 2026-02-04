@@ -1,3 +1,4 @@
+import discord
 from discord import app_commands
 from discord.ext import commands
 from services.player_service import player_service
@@ -10,7 +11,11 @@ class Register(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="register", description="Register as a new player in KartKings")
+    @app_commands.command(
+        name="register",
+        description="Register as a new player in KartKings",
+        guild=discord.Object(id=GUILD_ID)
+    )
     @app_commands.describe(
         username="Your in‑game display name",
         team="Choose your starting team"

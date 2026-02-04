@@ -11,8 +11,13 @@ def get_rank_from_xp(xp):
         return "Bronze"
     return "Rookie"
 
-def update_rank(players, discord_id):
-    for player in players:
-        if player.get("discordId") == discord_id:
-            player["rank"] = get_rank_from_xp(player.get("xp", 0))
-            return
+
+def update_rank(player):
+    old_rank = player.get("rank")
+    new_rank = get_rank_from_xp(player.get("xp", 0))
+
+    if old_rank != new_rank:
+        print(f"🏅 Rank updated: {player.get('name')} {old_rank} → {new_rank}")
+
+    player["rank"] = new_rank
+

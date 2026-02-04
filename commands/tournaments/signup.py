@@ -6,6 +6,8 @@ from utils.syncToSite import sync_to_site
 
 TOURNAMENTS_PATH = DATA_PATHS["TOURNAMENTS"]
 
+GUILD_ID = 1335339358932304055
+
 class Signup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

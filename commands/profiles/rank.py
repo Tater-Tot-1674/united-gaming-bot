@@ -5,6 +5,8 @@ from utils.constants import DATA_PATHS
 
 LEADERBOARD_PATH = DATA_PATHS["LEADERBOARD_WEEKLY"]
 
+GUILD_ID = 1335339358932304055
+
 class Rank(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

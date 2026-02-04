@@ -6,6 +6,8 @@ from utils.syncToSite import sync_to_site
 
 PLAYERS_PATH = DATA_PATHS["PLAYERS"]
 
+GUILD_ID = 1335339358932304055
+
 class Link(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

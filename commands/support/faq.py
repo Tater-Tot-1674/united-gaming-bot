@@ -1,3 +1,4 @@
+import discord
 from discord import app_commands
 from discord.ext import commands
 
@@ -9,7 +10,8 @@ class FAQ(commands.Cog):
 
     @app_commands.command(
         name="faq",
-        description="View frequently asked questions"
+        description="View frequently asked questions",
+        guild=discord.Object(id=GUILD_ID)
     )
     async def faq(self, interaction):
         text = (
@@ -24,3 +26,4 @@ class FAQ(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(FAQ(bot))
+

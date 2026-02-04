@@ -1,29 +1,31 @@
 import discord
+import traceback
 
 def setup(bot):
     @bot.event
     async def on_interaction(interaction: discord.Interaction):
         # Only handle slash commands
-        if not interaction.type == discord.InteractionType.application_command:
-            return
-
-        command = bot.tree.get_command(interaction.command.name)
-        if not command:
+        if interaction.type != discord.InteractionType.application_command:
             return
 
         try:
-            await bot.tree.dispatch(interaction)
+            # Let discord.py handle the command normally
+            await bot.process_application_commands(interaction)
         except Exception as e:
-            print(f"❌ Command execution error: {e}")
+            print(f"❌ Slash command error: {e}")
+            traceback.print_exc()
 
-            if interaction.response.is_done():
-                await interaction.followup.send(
-                    "❌ There was an error executing this command.",
-                    ephemeral=True
-                )
-            else:
-                await interaction.response.send_message(
-                    "❌ There was an error executing this command.",
-                    ephemeral=True
-                )
-
+            # Respond safely
+            try:
+                if interaction.response.is_done():
+                    await interaction.followup.send(
+                        "❌ There was an error executing this command.",
+                        ephemeral=True
+                    )
+                else:
+                    await interaction.response.send_message(
+                        "❌ There was an error executing this command.",
+                        ephemeral=True
+                    )
+            except Exception as inner:
+                print(f"❌ Failed to send error message: {inner}")

@@ -7,12 +7,12 @@ def setup(bot):
     @bot.event
     async def on_ready():
         print("====================================================")
-        print("🔵 ENTERING on_ready()")
+        print("🔵 ENTERING on_ready() — EVENT FIRED")
         print("====================================================")
 
         # Bot identity
         try:
-            print(f"🤖 Bot user object: {bot.user} (type={type(bot.user)})")
+            print(f"🤖 Bot user: {bot.user} (type={type(bot.user)})")
         except Exception as e:
             print("❌ ERROR printing bot.user:", repr(e))
             traceback.print_exc()
@@ -23,12 +23,12 @@ def setup(bot):
 
         try:
             guild = discord.Object(id=GUILD_ID)
-            print(f"🟩 Guild object created: {guild} (ID={GUILD_ID})")
+            print(f"🟩 Guild object created successfully: {guild}")
         except Exception as e:
             print("❌ ERROR creating guild object:", repr(e))
             traceback.print_exc()
 
-        # Debug: list commands BEFORE sync
+        # Commands BEFORE sync
         print("----------------------------------------------------")
         print("📋 Commands BEFORE sync:")
         try:
@@ -38,7 +38,7 @@ def setup(bot):
             for cmd in cmds:
                 print(f"   • {cmd.name} (type={cmd.type})")
         except Exception as e:
-            print("❌ ERROR listing commands before sync:", repr(e))
+            print("❌ ERROR listing commands BEFORE sync:", repr(e))
             traceback.print_exc()
 
         # Sync commands
@@ -47,7 +47,6 @@ def setup(bot):
 
         try:
             synced = await bot.tree.sync(guild=guild)
-
             print("🟩 Guild sync completed.")
             print(f"🟦 Discord returned {len(synced)} commands.")
 
@@ -58,9 +57,9 @@ def setup(bot):
                 print("     - Missing __init__.py in commands/")
                 print("     - Cogs missing setup()")
                 print("     - Decorators missing guild=discord.Object(...)")
-                print("     - Bot loaded twice / race condition")
-                print("     - Wrong guild ID")
                 print("     - Import errors inside cog files")
+                print("     - Wrong guild ID")
+                print("     - Bot loaded twice (now fixed)")
 
             print("📋 Commands returned by sync:")
             for cmd in synced:
@@ -70,7 +69,7 @@ def setup(bot):
             print("❌ EXCEPTION during sync:", repr(e))
             traceback.print_exc()
 
-        # Debug: list commands AFTER sync
+        # Commands AFTER sync
         print("----------------------------------------------------")
         print("📋 Commands AFTER sync:")
         try:
@@ -80,7 +79,7 @@ def setup(bot):
             for cmd in cmds_after:
                 print(f"   • {cmd.name} (type={cmd.type})")
         except Exception as e:
-            print("❌ ERROR listing commands after sync:", repr(e))
+            print("❌ ERROR listing commands AFTER sync:", repr(e))
             traceback.print_exc()
 
         # Presence
@@ -98,6 +97,7 @@ def setup(bot):
             traceback.print_exc()
 
         print("====================================================")
-        print("🟢 on_ready() COMPLETED SUCCESSFULLY")
+        print("🟢 on_ready() COMPLETED SUCCESSFULLY — BOT IS LIVE")
         print("====================================================")
+
 

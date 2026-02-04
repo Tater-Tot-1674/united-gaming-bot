@@ -1,14 +1,15 @@
-# /events/message_create.py
 import os
 import importlib
 import discord
 import traceback
+from discord.ext import commands
 from utils.constants import BOT_SETTINGS
 
-def setup(bot: discord.Bot):
+def setup(bot: commands.Bot):
+
     @bot.event
     async def on_message(message: discord.Message):
-        # Ignore bot messages
+
         if message.author.bot:
             return
 
@@ -26,7 +27,6 @@ def setup(bot: discord.Bot):
 
         commands_root = "commands"
 
-        # Walk through command folders
         for folder in os.listdir(commands_root):
             folder_path = os.path.join(commands_root, folder)
             if not os.path.isdir(folder_path):
@@ -45,7 +45,6 @@ def setup(bot: discord.Bot):
                     traceback.print_exc()
                     continue
 
-                # Only run commands that explicitly support prefix mode
                 if hasattr(module, "prefix") and module.prefix.lower() == cmd_name:
                     try:
                         await module.execute(message, args, bot)
@@ -55,5 +54,4 @@ def setup(bot: discord.Bot):
                         await message.reply("There was an error executing that command.")
                     return
 
-        # No prefix command matched
         await message.reply(f"Unknown command. Use {prefix}help to see available commands.")

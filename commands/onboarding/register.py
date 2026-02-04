@@ -4,6 +4,8 @@ from services.player_service import player_service
 from utils.syncToSite import sync_to_site
 from utils.constants import WEBSITE_REPO, GITHUB_TOKEN
 
+GUILD_ID = 1335339358932304055
+
 class Register(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

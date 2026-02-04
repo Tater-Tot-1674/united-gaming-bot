@@ -1,10 +1,11 @@
+# /events/message_create.py
 import os
 import importlib
 import discord
 import traceback
 from utils.constants import BOT_SETTINGS
 
-def setup(bot):
+def setup(bot: discord.Bot):
     @bot.event
     async def on_message(message: discord.Message):
         # Ignore bot messages
@@ -16,7 +17,6 @@ def setup(bot):
         if not message.content.startswith(prefix):
             return
 
-        # Extract command + args
         parts = message.content[len(prefix):].strip().split()
         if not parts:
             return

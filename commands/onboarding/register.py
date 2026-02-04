@@ -13,11 +13,11 @@ class Register(commands.Cog):
 
     @app_commands.command(
         name="register",
-        description="Register as a new player in KartKings",
-        guild=discord.Object(id=GUILD_ID)
+        description="Register as a new player in KartKings"
     )
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     @app_commands.describe(
-        username="Your in‑game display name",
+        username="Your in-game display name",
         team="Choose your starting team"
     )
     @app_commands.choices(team=[
@@ -28,38 +28,43 @@ class Register(commands.Cog):
         app_commands.Choice(name="Purple", value="purple"),
         app_commands.Choice(name="Orange", value="orange")
     ])
-    async def register(self, interaction, username: str, team: app_commands.Choice[str]):
+    async def register(
+        self,
+        interaction: discord.Interaction,
+        username: str,
+        team: app_commands.Choice[str]
+    ):
+        discord_id = interaction.user.id
+        print(f"🔹 /register called by {interaction.user} ({discord_id}) — Username: {username}, Team: {team.value}")
 
         try:
-            result = player_service.register_player(
-                interaction.user.id,
-                username,
-                team.value
-            )
+            result = player_service.register_player(discord_id, username, team.value)
 
             if result["success"]:
                 try:
                     sync_to_site("players.json", WEBSITE_REPO, GITHUB_TOKEN)
+                    print("✅ players.json synced to GitHub")
                 except Exception as e:
                     print(f"❌ syncToSite failed: {e}")
 
-                return await interaction.response.send_message(
+                await interaction.response.send_message(
                     f"🎉 Welcome **{username}**! You have joined the **{team.value}** team.",
                     ephemeral=True
                 )
+                return
 
-            return await interaction.response.send_message(
-                f"⚠️ {result['message']}",
-                ephemeral=True
+            print(f"⚠️ Registration failed for {discord_id}: {result['message']}")
+            await interaction.response.send_message(
+                f"⚠️ {result['message']}", ephemeral=True
             )
 
         except Exception as e:
-            print(f"❌ Error registering player: {e}")
-            return await interaction.response.send_message(
-                "❌ Something went wrong during registration.",
-                ephemeral=True
+            print(f"❌ /register error for {discord_id}: {e}")
+            await interaction.response.send_message(
+                "❌ Something went wrong during registration.", ephemeral=True
             )
 
 async def setup(bot):
     await bot.add_cog(Register(bot))
+
 

@@ -11,17 +11,20 @@ class Stats(commands.Cog):
 
     @app_commands.command(
         name="stats",
-        description="View your match statistics",
-        guild=discord.Object(id=GUILD_ID)
+        description="View your match statistics"
     )
-    async def stats(self, interaction):
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
+    async def stats(self, interaction: discord.Interaction):
+        discord_id = interaction.user.id
+        print(f"🔹 /stats called by {interaction.user} ({discord_id})")
+
         try:
-            player = player_service.get_player_by_discord(interaction.user.id)
+            player = player_service.get_player_by_discord(discord_id)
 
             if not player:
+                print(f"⚠️ Player not found for Discord ID {discord_id}")
                 return await interaction.response.send_message(
-                    "Player not found.",
-                    ephemeral=True
+                    "Player not found.", ephemeral=True
                 )
 
             wins = player.get("wins", 0)
@@ -36,15 +39,15 @@ class Stats(commands.Cog):
                 f"Losses: {losses}\n"
                 f"Win Rate: {win_rate}%"
             )
-
-            return await interaction.response.send_message(msg, ephemeral=True)
+            print(f"✅ Sending stats to user {discord_id}")
+            await interaction.response.send_message(msg, ephemeral=True)
 
         except Exception as e:
-            print(f"❌ Stats command error: {e}")
-            return await interaction.response.send_message(
-                "Error fetching stats.",
-                ephemeral=True
+            print(f"❌ /stats error for Discord ID {discord_id}: {e}")
+            await interaction.response.send_message(
+                "⚠️ Error fetching stats.", ephemeral=True
             )
 
 async def setup(bot):
     await bot.add_cog(Stats(bot))
+

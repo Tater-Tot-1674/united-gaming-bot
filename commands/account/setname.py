@@ -8,64 +8,70 @@ from utils.syncToSite import sync_to_site
 PLAYERS_PATH = DATA_PATHS["PLAYERS"]
 GUILD_ID = 1335339358932304055
 
-class Link(commands.Cog):
+class SetName(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @app_commands.command(
-        name="link",
-        description="Link your Discord account to a player",
-        guild=discord.Object(id=GUILD_ID)
+        name="setname",
+        description="Set or update your in-game player name"
     )
-    @app_commands.describe(player_tag="Your in‑game player tag")
-    async def link(self, interaction, player_tag: str):
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
+    @app_commands.describe(new_name="Your new in-game name")
+    async def setname(self, interaction: discord.Interaction, new_name: str):
         discord_id = interaction.user.id
+        print(f"🔹 /setname called by {interaction.user} ({discord_id}) with new name: {new_name}")
 
+        # Load players
         try:
             with open(PLAYERS_PATH, "r", encoding="utf8") as f:
                 players = json.load(f)
+            print("✅ Loaded players.json successfully")
         except Exception as e:
             print(f"❌ Failed to read players.json: {e}")
             return await interaction.response.send_message(
-                "There was an error reading player data.",
+                "⚠️ There was an error reading player data.",
                 ephemeral=True
             )
 
-        if any(p.get("discordId") == discord_id for p in players):
-            return await interaction.response.send_message(
-                "Your account is already linked!",
-                ephemeral=True
-            )
-
-        player = next((p for p in players if p.get("username") == player_tag), None)
+        # Find player by Discord ID
+        player = next((p for p in players if p.get("discordId") == discord_id), None)
         if not player:
+            print(f"⚠️ User {discord_id} not linked to any player")
             return await interaction.response.send_message(
-                "Player not found.",
+                "You must link your account first using `/link`.",
                 ephemeral=True
             )
 
-        player["discordId"] = discord_id
+        # Update name
+        old_name = player.get("username")
+        player["username"] = new_name
+        print(f"✏️ Changing player name from '{old_name}' to '{new_name}' for user {discord_id}")
 
+        # Save changes
         try:
             with open(PLAYERS_PATH, "w", encoding="utf8") as f:
                 json.dump(players, f, indent=2)
+            print(f"✅ Updated players.json successfully for {discord_id}")
         except Exception as e:
             print(f"❌ Failed to write players.json: {e}")
             return await interaction.response.send_message(
-                "There was an error saving your link.",
+                "⚠️ There was an error saving your new name.",
                 ephemeral=True
             )
 
+        # Sync to GitHub
         try:
             sync_to_site("players.json", WEBSITE_REPO, GITHUB_TOKEN)
+            print("✅ players.json synced to GitHub successfully")
         except Exception as e:
             print(f"❌ syncToSite failed: {e}")
 
         return await interaction.response.send_message(
-            f"Successfully linked to **{player['username']}**!",
+            f"✅ Your in-game name has been updated from **{old_name}** to **{new_name}**!",
             ephemeral=True
         )
 
 async def setup(bot):
-    await bot.add_cog(Link(bot))
+    await bot.add_cog(SetName(bot))
 

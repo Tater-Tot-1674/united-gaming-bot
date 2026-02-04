@@ -1,3 +1,4 @@
+import discord
 from discord import app_commands
 from discord.ext import commands
 
@@ -9,7 +10,8 @@ class Support(commands.Cog):
 
     @app_commands.command(
         name="support",
-        description="Get help from the KartKings team"
+        description="Get help from the KartKings team",
+        guild=discord.Object(id=GUILD_ID)
     )
     async def support(self, interaction):
         text = (

@@ -1,3 +1,4 @@
+print(">>> IMPORTED FILE:", __file__)
 import os
 print(">>> WORKING DIRECTORY:", os.getcwd())
 print(">>> FILES HERE:", os.listdir("."))

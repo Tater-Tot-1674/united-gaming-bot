@@ -5,6 +5,8 @@ from utils.constants import DATA_PATHS
 
 TOURNAMENTS_PATH = DATA_PATHS["TOURNAMENTS"]
 
+GUILD_ID = 1335339358932304055
+
 class Remind(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

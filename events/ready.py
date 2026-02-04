@@ -10,18 +10,11 @@ def setup(bot):
         print("🔵 ENTERING on_ready()")
         print("====================================================")
 
+        # Bot identity
         try:
             print(f"🤖 Bot user object: {bot.user} (type={type(bot.user)})")
         except Exception as e:
             print("❌ ERROR printing bot.user:", repr(e))
-
-        # Start keepalive AFTER bot is ready
-        try:
-            print("🟦 Starting keepalive thread...")
-            start_keepalive()
-            print("🟩 Keepalive thread started successfully.")
-        except Exception as e:
-            print("❌ ERROR starting keepalive:", repr(e))
             traceback.print_exc()
 
         # Validate guild object
@@ -39,7 +32,10 @@ def setup(bot):
         print("----------------------------------------------------")
         print("📋 Commands BEFORE sync:")
         try:
-            for cmd in bot.tree.get_commands():
+            cmds = bot.tree.get_commands()
+            if not cmds:
+                print("⚠️ No commands registered BEFORE sync.")
+            for cmd in cmds:
                 print(f"   • {cmd.name} (type={cmd.type})")
         except Exception as e:
             print("❌ ERROR listing commands before sync:", repr(e))
@@ -78,7 +74,10 @@ def setup(bot):
         print("----------------------------------------------------")
         print("📋 Commands AFTER sync:")
         try:
-            for cmd in bot.tree.get_commands():
+            cmds_after = bot.tree.get_commands()
+            if not cmds_after:
+                print("⚠️ No commands registered AFTER sync.")
+            for cmd in cmds_after:
                 print(f"   • {cmd.name} (type={cmd.type})")
         except Exception as e:
             print("❌ ERROR listing commands after sync:", repr(e))

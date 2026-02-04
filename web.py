@@ -1,3 +1,6 @@
+import sys
+print(">>> PYTHONPATH:", sys.path)
+print(">>> INSTALLED PACKAGES:", [p for p in sys.modules.keys() if "discord" in p.lower()])
 print(">>> IMPORTED FILE:", __file__)
 import os
 print(">>> WORKING DIRECTORY:", os.getcwd())

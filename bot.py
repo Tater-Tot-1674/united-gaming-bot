@@ -80,7 +80,7 @@ def run_flask():
     app.run(host="0.0.0.0", port=port)
 
 def start_keepalive():
-    thread = threading.Thread(target=run_flask)
+    thread = threading.Thread(target=run_flask, daemon=True)
     thread.start()
 
 # -------------------------------------
@@ -89,8 +89,5 @@ def start_keepalive():
 if __name__ == "__main__":
     load_commands()
     load_events()
-    start_keepalive()
     print("🔑 Logging into Discord...")
     bot.run(TOKEN)
-
-

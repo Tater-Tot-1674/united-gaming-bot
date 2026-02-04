@@ -17,8 +17,6 @@ if not TOKEN:
     print("❌ Missing DISCORDTOKEN in environment variables.")
     raise SystemExit
 
-GUILD_ID = 123456789012345678  # <-- your server ID here
-
 # -------------------------------------
 # Discord Client Setup
 # -------------------------------------
@@ -68,22 +66,6 @@ def load_events():
         if hasattr(imported, "setup"):
             imported.setup(bot)
             print(f"✔ Event loaded: {module.name}")
-
-# -------------------------------------
-# Bot Ready Event
-# -------------------------------------
-@bot.event
-async def on_ready():
-    print(f"🔓 Logged in as {bot.user}")
-
-    # Sync slash commands instantly to your server
-    try:
-        guild = discord.Object(id=GUILD_ID)
-        synced = await tree.sync(guild=guild)
-        print(f"⚡ Synced {len(synced)} slash commands to guild {GUILD_ID}")
-        print("🚀 Commands deployed instantly!")
-    except Exception as e:
-        print("❌ Slash command sync failed:", e)
 
 # -------------------------------------
 # Flask Keepalive Server (Render)

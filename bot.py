@@ -4,6 +4,8 @@ from discord.ext import commands
 import importlib
 import pkgutil
 
+print(">>> BOT.PY EXECUTED <<<")
+
 print("====================================================")
 print("🚀 Starting bot.py (BEGIN)")
 print("====================================================")

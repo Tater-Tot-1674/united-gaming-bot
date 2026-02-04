@@ -1,4 +1,5 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
@@ -15,7 +16,11 @@ class ReportMatch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="report", description="Report a match result")
+    @app_commands.command(
+        name="report",
+        description="Report a match result",
+        guild=discord.Object(id=GUILD_ID)   # ⭐ THIS makes it instant
+    )
     @app_commands.describe(
         winner="Discord ID of the winner",
         loser="Discord ID of the loser"
@@ -80,3 +85,4 @@ class ReportMatch(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(ReportMatch(bot))
+

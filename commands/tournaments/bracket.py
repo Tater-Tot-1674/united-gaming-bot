@@ -1,4 +1,5 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
@@ -16,12 +17,12 @@ class Bracket(commands.Cog):
 
     @app_commands.command(
         name="bracket",
-        description="Generate tournament bracket"
+        description="Generate tournament bracket",
+        guild=discord.Object(id=GUILD_ID)
     )
     @app_commands.describe(tournament_id="The ID of the tournament")
     async def bracket(self, interaction, tournament_id: str):
 
-        # Load tournaments
         try:
             with open(TOURNAMENTS_PATH, "r", encoding="utf8") as f:
                 tournaments = json.load(f)
@@ -41,7 +42,6 @@ class Bracket(commands.Cog):
 
         bracket = generate_bracket(tournament.get("participants", []))
 
-        # Save bracket
         try:
             with open(BRACKET_PATH, "w", encoding="utf8") as f:
                 json.dump(bracket, f, indent=2)

@@ -1,10 +1,10 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS
 
 PLAYERS_PATH = DATA_PATHS["PLAYERS"]
-
 GUILD_ID = 1335339358932304055
 
 class Rival(commands.Cog):
@@ -13,12 +13,12 @@ class Rival(commands.Cog):
 
     @app_commands.command(
         name="rival",
-        description="View your top rivals"
+        description="View your top rivals",
+        guild=discord.Object(id=GUILD_ID)
     )
     async def rival(self, interaction):
         user_id = str(interaction.user.id)
 
-        # Load players
         try:
             with open(PLAYERS_PATH, "r", encoding="utf8") as f:
                 players = json.load(f)
@@ -29,7 +29,6 @@ class Rival(commands.Cog):
                 ephemeral=True
             )
 
-        # Find the user
         me = next((p for p in players if p.get("id") == user_id), None)
         if not me:
             return await interaction.response.send_message(
@@ -37,7 +36,6 @@ class Rival(commands.Cog):
                 ephemeral=True
             )
 
-        # Sort rivals by points
         rivals = sorted(
             (p for p in players if p.get("id") != user_id),
             key=lambda p: p.get("points", 0),

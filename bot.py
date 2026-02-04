@@ -1,3 +1,4 @@
+print(">>> IMPORTED FILE:", __file__)
 print(">>> BOT.PY EXECUTED <<<")
 import os
 import discord

@@ -3,7 +3,6 @@ import time
 from datetime import datetime
 from utils.syncToSite import sync_to_site
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
-from services.player_service import player_service
 
 MATCHES_PATH = DATA_PATHS["MATCHES"]
 

@@ -5,7 +5,7 @@ import importlib
 import pkgutil
 
 print("====================================================")
-print("🚀 Starting bot.py")
+print("🚀 Starting bot.py (BEGIN)")
 print("====================================================")
 
 # -------------------------------------
@@ -104,4 +104,6 @@ if __name__ == "__main__":
     load_events()
 
     print("🔑 Logging into Discord...")
+    print("====================================================")
     bot.run(TOKEN)
+

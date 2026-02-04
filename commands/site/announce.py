@@ -1,11 +1,11 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
 from utils.syncToSite import sync_to_site
 
 ANNOUNCEMENTS_PATH = DATA_PATHS["ANNOUNCEMENTS"]
-
 GUILD_ID = 1335339358932304055
 
 class Announce(commands.Cog):
@@ -14,13 +14,13 @@ class Announce(commands.Cog):
 
     @app_commands.command(
         name="announce",
-        description="Post an announcement to the site"
+        description="Post an announcement to the site",
+        guild=discord.Object(id=GUILD_ID)
     )
     @app_commands.describe(message="The announcement text")
     async def announce(self, interaction, message: str):
         username = interaction.user.name
 
-        # Load announcements
         try:
             with open(ANNOUNCEMENTS_PATH, "r", encoding="utf8") as f:
                 announcements = json.load(f)
@@ -40,7 +40,6 @@ class Announce(commands.Cog):
 
         announcements.append(new_announcement)
 
-        # Save + sync
         try:
             with open(ANNOUNCEMENTS_PATH, "w", encoding="utf8") as f:
                 json.dump(announcements, f, indent=2)

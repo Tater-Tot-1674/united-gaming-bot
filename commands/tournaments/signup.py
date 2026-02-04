@@ -1,4 +1,5 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
@@ -14,13 +15,13 @@ class Signup(commands.Cog):
 
     @app_commands.command(
         name="signup",
-        description="Sign up for a tournament"
+        description="Sign up for a tournament",
+        guild=discord.Object(id=GUILD_ID)
     )
     @app_commands.describe(tournament_id="The ID of the tournament")
     async def signup(self, interaction, tournament_id: str):
         user_id = str(interaction.user.id)
 
-        # Load tournaments
         try:
             with open(TOURNAMENTS_PATH, "r", encoding="utf8") as f:
                 tournaments = json.load(f)
@@ -48,7 +49,6 @@ class Signup(commands.Cog):
 
         tournament["participants"].append(user_id)
 
-        # Save tournaments
         try:
             with open(TOURNAMENTS_PATH, "w", encoding="utf8") as f:
                 json.dump(tournaments, f, indent=2)
@@ -63,4 +63,5 @@ class Signup(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Signup(bot))
+
 

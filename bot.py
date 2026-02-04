@@ -5,9 +5,10 @@ import importlib
 import pkgutil
 from flask import Flask
 from threading import Thread
+import traceback
 
 # ====================================================
-#  WEB SERVER (keeps Render Web Service alive)
+#  WEB SERVER (keeps Render alive)
 # ====================================================
 app = Flask(__name__)
 
@@ -19,9 +20,10 @@ def run_web():
     app.run(host="0.0.0.0", port=10000)
 
 Thread(target=run_web, daemon=True).start()
+print("🌐 Flask keep-alive started on port 10000", flush=True)
 
 # ====================================================
-#  DISCORD BOT SETUP
+#  BOT SETUP
 # ====================================================
 TOKEN = os.getenv("DISCORDTOKEN")
 if not TOKEN:
@@ -37,57 +39,67 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
 # ====================================================
-#  LOAD COMMANDS
+#  HELPER: LOG ANY IMPORT ERROR
 # ====================================================
-def load_commands():
-    if not os.path.isdir("commands"):
-        print("❌ 'commands' folder missing", flush=True)
+def safe_import(path):
+    try:
+        mod = importlib.import_module(path)
+        print(f"✔ Imported {path}", flush=True)
+        return mod
+    except Exception as e:
+        print(f"❌ Failed to import {path} -> {repr(e)}", flush=True)
+        traceback.print_exc()
+        return None
+
+# ====================================================
+#  LOAD COMMANDS (recursive)
+# ====================================================
+def load_commands(path="commands", parent="commands"):
+    if not os.path.isdir(path):
+        print(f"❌ Commands folder '{path}' missing", flush=True)
         return
 
-    for module in pkgutil.iter_modules(['commands']):
-        try:
-            if module.ispkg:
-                folder = module.name
-                folder_path = f"commands/{folder}"
-                for submodule in pkgutil.iter_modules([folder_path]):
-                    full_path = f"commands.{folder}.{submodule.name}"
-                    importlib.import_module(full_path)
-                    print(f"✔ Loaded command: {full_path}", flush=True)
-            else:
-                full_path = f"commands.{module.name}"
-                importlib.import_module(full_path)
-                print(f"✔ Loaded command: {full_path}", flush=True)
-        except Exception as e:
-            print(f"❌ Error loading command '{module.name}': {e}", flush=True)
+    for module in pkgutil.iter_modules([path]):
+        full_path = f"{parent}.{module.name}"
+        if module.ispkg:
+            print(f"📂 Found subpackage: {full_path}", flush=True)
+            load_commands(f"{path}/{module.name}", full_path)
+        else:
+            print(f"📄 Found command file: {full_path}", flush=True)
+            safe_import(full_path)
 
 # ====================================================
 #  LOAD EVENTS
 # ====================================================
-def load_events():
-    if not os.path.isdir("events"):
-        print("❌ 'events' folder missing", flush=True)
+def load_events(path="events", parent="events"):
+    if not os.path.isdir(path):
+        print(f"❌ Events folder '{path}' missing", flush=True)
         return
 
-    for module in pkgutil.iter_modules(['events']):
-        try:
-            full_path = f"events.{module.name}"
-            imported = importlib.import_module(full_path)
+    for module in pkgutil.iter_modules([path]):
+        full_path = f"{parent}.{module.name}"
+        imported = safe_import(full_path)
+        if imported:
             if hasattr(imported, "setup"):
-                imported.setup(bot)
-                print(f"✔ Loaded event: {module.name}", flush=True)
+                try:
+                    imported.setup(bot)
+                    print(f"🟢 Event setup executed: {full_path}", flush=True)
+                except Exception as e:
+                    print(f"❌ Error running setup() for {full_path}: {repr(e)}", flush=True)
+                    traceback.print_exc()
             else:
-                print(f"⚠️ Event '{module.name}' missing setup()", flush=True)
-        except Exception as e:
-            print(f"❌ Error loading event '{module.name}': {e}", flush=True)
+                print(f"⚠️ Event {full_path} missing setup()", flush=True)
 
 # ====================================================
-#  STARTUP
+#  START BOT
 # ====================================================
 if __name__ == "__main__":
     print("🟦 Starting bot...", flush=True)
     load_commands()
     load_events()
+    print("🟩 All commands/events attempted to load.", flush=True)
     bot.run(TOKEN)
+
 
 
 

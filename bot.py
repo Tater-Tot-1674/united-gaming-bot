@@ -1,14 +1,14 @@
 import os
 import discord
-from discord.ext import commands
 import importlib
 import pkgutil
+import traceback
+from discord.ext import commands
 from flask import Flask
 from threading import Thread
-import traceback
 
 # ====================================================
-#  WEB SERVER (keeps Render Web Service alive)
+# 🌐 KEEP-ALIVE WEB SERVER (Render)
 # ====================================================
 app = Flask(__name__)
 
@@ -17,17 +17,17 @@ def home():
     return "OK"
 
 def run_web():
-    print("🌐 Flask keep-alive started on port 10000")
+    print("🌐 Flask keep-alive started on port 10000", flush=True)
     app.run(host="0.0.0.0", port=10000)
 
-Thread(target=run_web).start()
+Thread(target=run_web, daemon=True).start()
 
 # ====================================================
-#  DISCORD BOT SETUP
+# 🤖 DISCORD BOT SETUP
 # ====================================================
 TOKEN = os.getenv("DISCORDTOKEN")
 if not TOKEN:
-    print("❌ Missing DISCORDTOKEN environment variable")
+    print("❌ DISCORDTOKEN missing", flush=True)
     raise SystemExit
 
 intents = discord.Intents.default()
@@ -36,118 +36,132 @@ intents.messages = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-tree = bot.tree
 
 # ====================================================
-#  COMMAND LOADING
+# 📦 LOAD COMMAND MODULES
 # ====================================================
-def load_commands():
-    print("📦 Loading commands...")
+async def load_commands():
+    print("📦 Loading commands...", flush=True)
+
     if not os.path.isdir("commands"):
-        print("❌ 'commands' folder missing")
+        print("❌ 'commands' folder missing", flush=True)
         return
 
     for module in pkgutil.iter_modules(['commands']):
         try:
             if module.ispkg:
-                folder = module.name
-                folder_path = f"commands/{folder}"
-
+                folder_path = f"commands/{module.name}"
                 for submodule in pkgutil.iter_modules([folder_path]):
-                    full_path = f"commands.{folder}.{submodule.name}"
-                    imported = importlib.import_module(full_path)
-                    print(f"✅ Imported command: {full_path}")
-                    if hasattr(imported, "setup"):
-                        print(f"🟢 Running setup() for {full_path}")
-                        bot.loop.create_task(imported.setup(bot))
+                    full_path = f"commands.{module.name}.{submodule.name}"
+                    await load_command_module(full_path)
             else:
-                full_path = f"commands.{module.name}"
-                imported = importlib.import_module(full_path)
-                print(f"✅ Imported command: {full_path}")
-                if hasattr(imported, "setup"):
-                    print(f"🟢 Running setup() for {full_path}")
-                    bot.loop.create_task(imported.setup(bot))
+                await load_command_module(f"commands.{module.name}")
 
         except Exception as e:
-            print(f"❌ Error importing command '{module.name}': {e}")
+            print(f"❌ Failed loading command package {module.name}: {e}", flush=True)
             traceback.print_exc()
 
+
+async def load_command_module(full_path):
+    try:
+        imported = importlib.import_module(full_path)
+        print(f"✅ Imported command: {full_path}", flush=True)
+
+        if hasattr(imported, "setup"):
+            await imported.setup(bot)
+            print(f"🟢 setup() complete for {full_path}", flush=True)
+        else:
+            print(f"⚠️ No setup() in {full_path}", flush=True)
+
+    except Exception as e:
+        print(f"❌ Error importing {full_path}: {e}", flush=True)
+        traceback.print_exc()
+
+
 # ====================================================
-#  EVENT LOADING
+# 🎭 LOAD EVENTS
 # ====================================================
 def load_events():
-    print("📦 Loading events...")
+    print("📦 Loading events...", flush=True)
+
     if not os.path.isdir("events"):
-        print("❌ 'events' folder missing")
+        print("❌ 'events' folder missing", flush=True)
         return
 
     for module in pkgutil.iter_modules(['events']):
         try:
             full_path = f"events.{module.name}"
             imported = importlib.import_module(full_path)
-            print(f"✅ Imported event: {full_path}")
+            print(f"✅ Imported event: {full_path}", flush=True)
+
             if hasattr(imported, "setup"):
-                print(f"🟢 Running setup() for event {full_path}")
                 imported.setup(bot)
+                print(f"🟢 Event setup executed: {module.name}", flush=True)
             else:
-                print(f"⚠️ Event '{module.name}' missing setup()")
+                print(f"⚠️ Event {module.name} missing setup()", flush=True)
+
         except Exception as e:
-            print(f"❌ Error importing event '{module.name}': {e}")
+            print(f"❌ Error loading event {module.name}: {e}", flush=True)
             traceback.print_exc()
 
+
 # ====================================================
-#  ON READY
+# 🚀 BOT READY EVENT
 # ====================================================
 @bot.event
 async def on_ready():
-    print("============================================================")
-    print("🟢 on_ready() fired — BOT ONLINE")
-    print(f"🤖 Logged in as {bot.user} (ID: {bot.user.id})")
+    print("="*60, flush=True)
+    print("🟢 BOT ONLINE", flush=True)
+    print(f"🤖 Logged in as {bot.user} (ID: {bot.user.id})", flush=True)
 
     # Presence
     try:
         await bot.change_presence(
-            activity=discord.Game(name="Your Bot | /help"),
+            activity=discord.Game(name="KartKings | /help"),
             status=discord.Status.online
         )
-        print("🟩 Presence set successfully.")
+        print("🟩 Presence set", flush=True)
     except Exception as e:
-        print(f"❌ Failed to set presence: {e}")
+        print("❌ Presence error:", e, flush=True)
         traceback.print_exc()
 
-    # Log commands before sync
-    print("------------------------------------------------------------")
-    print("📋 Commands BEFORE sync:")
-    for cmd in bot.tree.get_commands():
-        print(f"  • {cmd.name} (type={cmd.type})")
-    if not bot.tree.get_commands():
-        print("⚠️ No commands registered BEFORE sync.")
+    # List commands BEFORE sync
+    cmds = bot.tree.get_commands()
+    print(f"📋 Commands before sync: {len(cmds)}", flush=True)
+    for c in cmds:
+        print(f"   • {c.name}", flush=True)
 
-    # Sync commands
-    print("------------------------------------------------------------")
-    print("🔧 Syncing commands...")
+    # Sync
     try:
         synced = await bot.tree.sync()
-        print(f"🟩 Synced {len(synced)} slash commands globally.")
-        for cmd in synced:
-            print(f"  • {cmd.name} (type={cmd.type})")
-        if len(synced) == 0:
-            print("⚠️ WARNING: No commands registered after sync.")
+        print(f"🟩 Synced {len(synced)} global slash commands", flush=True)
+        for c in synced:
+            print(f"   • {c.name}", flush=True)
+
+        if not synced:
+            print("⚠️ ZERO COMMANDS SYNCED", flush=True)
+
     except Exception as e:
-        print(f"❌ Exception during sync: {e}")
+        print("❌ Sync failed:", e, flush=True)
         traceback.print_exc()
 
-    print("============================================================")
-    print("✅ Bot ready completed successfully.")
-    print("============================================================")
+    print("="*60, flush=True)
+
 
 # ====================================================
-#  STARTUP
+# 🟦 STARTUP SEQUENCE
 # ====================================================
+async def main():
+    async with bot:
+        await load_commands()  # MUST happen before start
+        load_events()
+        await bot.start(TOKEN)
+
+
 if __name__ == "__main__":
-    print("🟦 Starting bot...")
-    load_commands()
-    load_events()
-    bot.run(TOKEN)
+    print("🟦 Starting bot...", flush=True)
+    import asyncio
+    asyncio.run(main())
+
 
 

@@ -1,23 +1,26 @@
 import json
+import discord
 from discord import app_commands
 from discord.ext import commands
 from utils.constants import DATA_PATHS, WEBSITE_REPO, GITHUB_TOKEN
 from utils.syncToSite import sync_to_site
 
 PLAYERS_PATH = DATA_PATHS["PLAYERS"]
-
 GUILD_ID = 1335339358932304055
 
 class Link(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="link", description="Link your Discord account to a player")
+    @app_commands.command(
+        name="link",
+        description="Link your Discord account to a player",
+        guild=discord.Object(id=GUILD_ID)
+    )
     @app_commands.describe(player_tag="Your in‑game player tag")
     async def link(self, interaction, player_tag: str):
         discord_id = interaction.user.id
 
-        # Load players
         try:
             with open(PLAYERS_PATH, "r", encoding="utf8") as f:
                 players = json.load(f)
@@ -28,14 +31,12 @@ class Link(commands.Cog):
                 ephemeral=True
             )
 
-        # Already linked?
         if any(p.get("discordId") == discord_id for p in players):
             return await interaction.response.send_message(
                 "Your account is already linked!",
                 ephemeral=True
             )
 
-        # Find player by tag
         player = next((p for p in players if p.get("username") == player_tag), None)
         if not player:
             return await interaction.response.send_message(
@@ -43,7 +44,6 @@ class Link(commands.Cog):
                 ephemeral=True
             )
 
-        # Link account
         player["discordId"] = discord_id
 
         try:
@@ -56,7 +56,6 @@ class Link(commands.Cog):
                 ephemeral=True
             )
 
-        # Sync to GitHub
         try:
             sync_to_site("players.json", WEBSITE_REPO, GITHUB_TOKEN)
         except Exception as e:
@@ -69,3 +68,4 @@ class Link(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Link(bot))
+

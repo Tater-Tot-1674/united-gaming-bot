@@ -1,3 +1,4 @@
+import discord
 from discord import app_commands
 from discord.ext import commands
 
@@ -9,7 +10,8 @@ class Start(commands.Cog):
 
     @app_commands.command(
         name="start",
-        description="Get started with KartKings"
+        description="Get started with KartKings",
+        guild=discord.Object(id=GUILD_ID)
     )
     async def start(self, interaction):
         text = (
@@ -25,3 +27,4 @@ class Start(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Start(bot))
+

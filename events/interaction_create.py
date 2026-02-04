@@ -1,7 +1,8 @@
+# /events/interaction_create.py
 import discord
 import traceback
 
-def setup(bot):
+def setup(bot: discord.Bot):
     @bot.event
     async def on_interaction(interaction: discord.Interaction):
         # Only handle slash commands

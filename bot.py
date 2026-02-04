@@ -1,7 +1,6 @@
 import os
 import discord
 from discord.ext import commands
-from discord import app_commands
 import importlib
 import pkgutil
 from flask import Flask
@@ -93,3 +92,4 @@ if __name__ == "__main__":
     start_keepalive()
     print("🔑 Logging into Discord...")
     bot.run(TOKEN)
+

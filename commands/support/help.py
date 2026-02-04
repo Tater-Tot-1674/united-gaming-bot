@@ -1,3 +1,4 @@
+import discord
 from discord import app_commands
 from discord.ext import commands
 
@@ -9,7 +10,8 @@ class HelpMenu(commands.Cog):
 
     @app_commands.command(
         name="help",
-        description="Show all available commands and how to use them"
+        description="Show all available commands and how to use them",
+        guild=discord.Object(id=GUILD_ID)
     )
     async def help(self, interaction):
         text = (

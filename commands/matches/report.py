@@ -88,6 +88,6 @@ class ReportMatch(commands.Cog):
         )
 
 async def setup(bot):
-    await bot.add_cog(ReportMatch(bot))
+    await bot.add_cog(report(bot))
 
 

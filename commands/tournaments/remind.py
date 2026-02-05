@@ -22,11 +22,11 @@ class Remind(commands.Cog):
                 tournaments = json.load(f)
         except Exception as e:
             print(f"❌ Failed to read tournaments.json: {e}")
-            return await interaction.response.send_message("Error reading tournament data.", ephemeral=True)
+            return await interaction.response.send_message("Error reading tournament data.", ephemeral=False)
 
         tournament = next((t for t in tournaments if t.get("id") == tournament_id), None)
         if not tournament:
-            return await interaction.response.send_message("Tournament not found.", ephemeral=True)
+            return await interaction.response.send_message("Tournament not found.", ephemeral=False
 
         participants = tournament.get("participants", [])
         mentions = " ".join(f"<@{pid}>" for pid in participants)

@@ -23,7 +23,7 @@ class Rank(commands.Cog):
             print(f"❌ Failed to read leaderboard: {e}")
             await interaction.response.send_message(
                 "Error loading leaderboard.",
-                ephemeral=True
+                ephemeral=False
             )
             return
 

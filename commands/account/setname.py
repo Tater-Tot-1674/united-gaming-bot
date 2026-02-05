@@ -31,7 +31,7 @@ class SetName(commands.Cog):
             print(f"❌ Failed to read players.json: {e}")
             return await interaction.response.send_message(
                 "⚠️ There was an error reading player data.",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Find player by Discord ID
@@ -40,7 +40,7 @@ class SetName(commands.Cog):
             print(f"⚠️ User {discord_id} not linked to any player")
             return await interaction.response.send_message(
                 "You must link your account first using `/link`.",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Update name
@@ -57,7 +57,7 @@ class SetName(commands.Cog):
             print(f"❌ Failed to write players.json: {e}")
             return await interaction.response.send_message(
                 "⚠️ There was an error saving your new name.",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Sync to GitHub
@@ -69,7 +69,7 @@ class SetName(commands.Cog):
 
         return await interaction.response.send_message(
             f"✅ Your in-game name has been updated from **{old_name}** to **{new_name}**!",
-            ephemeral=True
+            ephemeral=False
         )
 
 async def setup(bot):

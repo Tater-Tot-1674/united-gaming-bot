@@ -24,7 +24,7 @@ class Stats(commands.Cog):
             if not player:
                 print(f"⚠️ Player not found for Discord ID {discord_id}")
                 return await interaction.response.send_message(
-                    "Player not found.", ephemeral=True
+                    "Player not found.", ephemeral=False
                 )
 
             wins = player.get("wins", 0)
@@ -40,12 +40,12 @@ class Stats(commands.Cog):
                 f"Win Rate: {win_rate}%"
             )
             print(f"✅ Sending stats to user {discord_id}")
-            await interaction.response.send_message(msg, ephemeral=True)
+            await interaction.response.send_message(msg, ephemeral=False)
 
         except Exception as e:
             print(f"❌ /stats error for Discord ID {discord_id}: {e}")
             await interaction.response.send_message(
-                "⚠️ Error fetching stats.", ephemeral=True
+                "⚠️ Error fetching stats.", ephemeral=False
             )
 
 async def setup(bot):

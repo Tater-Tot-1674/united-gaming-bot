@@ -22,12 +22,12 @@ def setup(bot: commands.Bot):
                 if interaction.response.is_done():
                     await interaction.followup.send(
                         "❌ There was an error executing this command.",
-                        ephemeral=True
+                        ephemeral=False
                     )
                 else:
                     await interaction.response.send_message(
                         "❌ There was an error executing this command.",
-                        ephemeral=True
+                        ephemeral=False
                     )
             except Exception as inner:
                 print(f"❌ Failed to send error message: {inner}")

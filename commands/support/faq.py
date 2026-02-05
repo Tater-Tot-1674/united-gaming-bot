@@ -19,7 +19,7 @@ class FAQ(commands.Cog):
             "- `/faq-tournaments` → Tournament questions\n"
             "- `/faq-account` → Account & profile questions"
         )
-        await interaction.response.send_message(text, ephemeral=True)
+        await interaction.response.send_message(text, ephemeral=False)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(FAQ(bot))

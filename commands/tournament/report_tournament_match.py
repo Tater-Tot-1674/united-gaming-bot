@@ -2,9 +2,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from services.tournament_service import tournament_service
-from services.match_service import match_service
 
 GUILD_ID = 1335339358932304055
+AUTHORIZED_REPORTERS = [1035911200237699072]  # Only these Discord IDs can report matches
 
 class ReportTournamentMatch(commands.Cog):
     def __init__(self, bot):
@@ -12,52 +12,54 @@ class ReportTournamentMatch(commands.Cog):
 
     @app_commands.command(
         name="report_tournament_match",
-        description="Report the result of a tournament match"
+        description="Report the winner of a tournament match"
     )
     @app_commands.guilds(discord.Object(id=GUILD_ID))
     @app_commands.describe(
         tournament_id="The ID of the tournament",
-        winner="Winner's Discord mention",
-        loser="Loser's Discord mention"
+        winner_id="Discord ID of the winner",
+        loser_id="Discord ID of the loser"
     )
     async def report_tournament_match(
         self,
         interaction: discord.Interaction,
         tournament_id: str,
-        winner: discord.Member,
-        loser: discord.Member
+        winner_id: str,
+        loser_id: str
     ):
+        if interaction.user.id not in AUTHORIZED_REPORTERS:
+            await interaction.response.send_message(
+                "⚠️ You are not authorized to report tournament matches.", ephemeral=True
+            )
+            return
+
         try:
             tournament = tournament_service.get_tournament(tournament_id)
             if not tournament:
                 await interaction.response.send_message(
-                    "❌ Tournament not found.", ephemeral=True
+                    "⚠️ Tournament not found.", ephemeral=True
                 )
                 return
 
-            participants = tournament.get("participants", [])
-            if winner.id not in participants or loser.id not in participants:
+            # Record the match result in the tournament participants (basic implementation)
+            result = tournament_service.record_match(tournament_id, winner_id, loser_id)
+            if not result["success"]:
                 await interaction.response.send_message(
-                    "❌ Both players must be signed up for this tournament.", ephemeral=True
+                    f"⚠️ {result['message']}", ephemeral=True
                 )
                 return
-
-            # Update bracket
-            tournament_service.generate_bracket(tournament_id)
-
-            # Report match in matches.json
-            match_service.report_match(str(winner.id), str(loser.id))
 
             await interaction.response.send_message(
-                f"✅ Match reported: {winner.display_name} defeated {loser.display_name} in **{tournament.get('name')}**.",
+                f"✅ Match reported: <@{winner_id}> defeated <@{loser_id}> in **{tournament.get('name')}**.",
                 ephemeral=False
             )
 
         except Exception as e:
             print(f"❌ /report_tournament_match error: {e}")
             await interaction.response.send_message(
-                "❌ Failed to report tournament match.", ephemeral=True
+                "❌ Something went wrong while reporting the match.", ephemeral=True
             )
 
 async def setup(bot):
     await bot.add_cog(ReportTournamentMatch(bot))
+

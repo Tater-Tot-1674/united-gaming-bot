@@ -29,7 +29,7 @@ class Announce(commands.Cog):
             print(f"❌ Failed to read announcements.json: {e}")
             await interaction.response.send_message(
                 "Error reading announcements.",
-                ephemeral=True
+                ephemeral=False
             )
             return
 
@@ -54,7 +54,7 @@ class Announce(commands.Cog):
 
         await interaction.response.send_message(
             "Announcement posted!",
-            ephemeral=True
+            ephemeral=False
         )
 
 async def setup(bot: commands.Bot):

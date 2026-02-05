@@ -49,19 +49,19 @@ class Register(commands.Cog):
 
                 await interaction.response.send_message(
                     f"🎉 Welcome **{username}**! You have joined the **{team.value}** team.",
-                    ephemeral=True
+                    ephemeral=False
                 )
                 return
 
             print(f"⚠️ Registration failed for {discord_id}: {result['message']}")
             await interaction.response.send_message(
-                f"⚠️ {result['message']}", ephemeral=True
+                f"⚠️ {result['message']}", ephemeral=False
             )
 
         except Exception as e:
             print(f"❌ /register error for {discord_id}: {e}")
             await interaction.response.send_message(
-                "❌ Something went wrong during registration.", ephemeral=True
+                "❌ Something went wrong during registration.", ephemeral=False
             )
 
 async def setup(bot):

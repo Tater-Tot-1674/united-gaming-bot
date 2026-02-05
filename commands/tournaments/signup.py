@@ -25,15 +25,15 @@ class Signup(commands.Cog):
                 tournaments = json.load(f)
         except Exception as e:
             print(f"❌ Failed to read tournaments.json: {e}")
-            return await interaction.response.send_message("Error reading tournament data.", ephemeral=True)
+            return await interaction.response.send_message("Error reading tournament data.",ephemeral=False)
 
         tournament = next((t for t in tournaments if t.get("id") == tournament_id), None)
         if not tournament:
-            return await interaction.response.send_message("Tournament not found.", ephemeral=True)
+            return await interaction.response.send_message("Tournament not found.", ephemeral=False)
 
         tournament.setdefault("participants", [])
         if user_id in tournament["participants"]:
-            return await interaction.response.send_message("You are already signed up!", ephemeral=True)
+            return await interaction.response.send_message("You are already signed up!", ephemeral=False)
 
         tournament["participants"].append(user_id)
 
@@ -44,7 +44,7 @@ class Signup(commands.Cog):
         except Exception as e:
             print(f"❌ Failed to write tournaments.json: {e}")
 
-        await interaction.response.send_message(f"🎉 You have joined **{tournament.get('name')}**!", ephemeral=True)
+        await interaction.response.send_message(f"🎉 You have joined **{tournament.get('name')}**!", ephemeral=False)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Signup(bot))

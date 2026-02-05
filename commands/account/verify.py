@@ -31,7 +31,7 @@ class Verify(commands.Cog):
             print(f"❌ Failed to read players.json: {e}")
             return await interaction.response.send_message(
                 "⚠️ There was an error reading player data.",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Find player by Discord ID
@@ -40,21 +40,21 @@ class Verify(commands.Cog):
             print(f"⚠️ User {user_id} not registered")
             return await interaction.response.send_message(
                 "You need to register first!",
-                ephemeral=True
+                ephemeral=False
             )
 
         if player.get("verified"):
             print(f"⚠️ User {user_id} already verified")
             return await interaction.response.send_message(
                 "You are already verified!",
-                ephemeral=True
+                ephemeral=False
             )
 
         if player.get("verificationCode") != code:
             print(f"⚠️ User {user_id} entered invalid code")
             return await interaction.response.send_message(
                 "Invalid verification code.",
-                ephemeral=True
+                ephemeral=False 
             )
 
         # Mark verified
@@ -69,7 +69,7 @@ class Verify(commands.Cog):
             print(f"❌ Failed to write players.json: {e}")
             return await interaction.response.send_message(
                 "⚠️ There was an error saving your verification.",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Sync to GitHub
@@ -81,7 +81,7 @@ class Verify(commands.Cog):
 
         return await interaction.response.send_message(
             "✅ Account verified successfully!",
-            ephemeral=True
+            ephemeral=False
         )
 
 async def setup(bot):

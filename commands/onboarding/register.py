@@ -18,27 +18,29 @@ class Register(commands.Cog):
     @app_commands.guilds(discord.Object(id=GUILD_ID))
     @app_commands.describe(
         username="Your in-game display name",
-        team="Choose your starting team"
+        team="Your team abbreviation (3 letters max, or N/A if no team)"
     )
-    @app_commands.choices(team=[
-        app_commands.Choice(name="Red", value="red"),
-        app_commands.Choice(name="Blue", value="blue"),
-        app_commands.Choice(name="Green", value="green"),
-        app_commands.Choice(name="Yellow", value="yellow"),
-        app_commands.Choice(name="Purple", value="purple"),
-        app_commands.Choice(name="Orange", value="orange")
-    ])
     async def register(
         self,
         interaction: discord.Interaction,
         username: str,
-        team: app_commands.Choice[str]
+        team: str
     ):
         discord_id = interaction.user.id
-        print(f"🔹 /register called by {interaction.user} ({discord_id}) — Username: {username}, Team: {team.value}")
+        team = team.strip().upper() if team else "N/A"
+
+        # Limit to 3 characters max
+        if len(team) > 3:
+            await interaction.response.send_message(
+                "⚠️ Team abbreviation must be 3 letters or less. Use N/A if no team.",
+                ephemeral=False
+            )
+            return
+
+        print(f"🔹 /register called by {interaction.user} ({discord_id}) — Username: {username}, Team: {team}")
 
         try:
-            result = player_service.register_player(discord_id, username, team.value)
+            result = player_service.register_player(discord_id, username, team)
 
             if result["success"]:
                 try:
@@ -48,7 +50,7 @@ class Register(commands.Cog):
                     print(f"❌ syncToSite failed: {e}")
 
                 await interaction.response.send_message(
-                    f"🎉 Welcome **{username}**! You have joined the **{team.value}** team.",
+                    f"🎉 Welcome **{username}**! Your team abbreviation is set to **{team}**.",
                     ephemeral=False
                 )
                 return
@@ -66,5 +68,6 @@ class Register(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Register(bot))
+
 
 

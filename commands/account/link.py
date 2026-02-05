@@ -31,7 +31,7 @@ class Link(commands.Cog):
             print(f"❌ Failed to read players.json: {e}")
             return await interaction.response.send_message(
                 "⚠️ There was an error reading player data.",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Check if already linked
@@ -39,7 +39,7 @@ class Link(commands.Cog):
             print(f"⚠️ User {discord_id} already linked")
             return await interaction.response.send_message(
                 "Your account is already linked!",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Find player by tag
@@ -48,7 +48,7 @@ class Link(commands.Cog):
             print(f"⚠️ Player tag '{player_tag}' not found")
             return await interaction.response.send_message(
                 "Player not found.",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Link account
@@ -62,7 +62,7 @@ class Link(commands.Cog):
             print(f"❌ Failed to write players.json: {e}")
             return await interaction.response.send_message(
                 "⚠️ There was an error saving your link.",
-                ephemeral=True
+                ephemeral=False
             )
 
         # Sync to GitHub
@@ -74,7 +74,7 @@ class Link(commands.Cog):
 
         return await interaction.response.send_message(
             f"✅ Successfully linked to **{player['username']}**!",
-            ephemeral=True
+            ephemeral=False
         )
 
 async def setup(bot):

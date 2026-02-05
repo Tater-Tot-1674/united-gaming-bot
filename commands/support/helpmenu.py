@@ -21,7 +21,7 @@ class HelpMenu(commands.Cog):
             "- `/leaderboard` → View rankings\n"
             "- `/announce` → Admin announcements"
         )
-        await interaction.response.send_message(text, ephemeral=True)
+        await interaction.response.send_message(text, ephemeral=False)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(HelpMenu(bot))

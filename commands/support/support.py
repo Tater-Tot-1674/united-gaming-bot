@@ -19,7 +19,7 @@ class Support(commands.Cog):
             "- Check `/faq` for common questions.\n\n"
             "We’re here to help you dominate the arena!"
         )
-        await interaction.response.send_message(text, ephemeral=True)
+        await interaction.response.send_message(text, ephemeral=False)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Support(bot))

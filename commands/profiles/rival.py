@@ -25,7 +25,7 @@ class Rival(commands.Cog):
             print(f"❌ Failed to read players.json: {e}")
             await interaction.response.send_message(
                 "Error loading player data.",
-                ephemeral=True
+                ephemeral=False
             )
             return
 
@@ -33,7 +33,7 @@ class Rival(commands.Cog):
         if not me:
             await interaction.response.send_message(
                 "You are not registered.",
-                ephemeral=True
+                ephemeral=False
             )
             return
 
@@ -46,7 +46,7 @@ class Rival(commands.Cog):
         if not rivals:
             await interaction.response.send_message(
                 "No rivals found.",
-                ephemeral=True
+                ephemeral=False
             )
             return
 
